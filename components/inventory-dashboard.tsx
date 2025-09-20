@@ -1,12 +1,25 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useState, useEffect } from 'react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -14,33 +27,49 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Package, AlertTriangle, Plus, Minus, Search, TrendingDown, TrendingUp, Clock, WifiOff } from "lucide-react"
+  DialogTrigger
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Package,
+  AlertTriangle,
+  Plus,
+  Minus,
+  Search,
+  TrendingDown,
+  TrendingUp,
+  Clock,
+  WifiOff
+} from 'lucide-react'
 import {
   getInventoryItems,
   getStockAlerts,
   getCategorySummary,
   updateStock,
   logUsage,
-  type InventoryItem,
-} from "@/lib/inventory"
-import { useAuth } from "@/hooks/use-auth"
-import { useOffline } from "@/hooks/use-offline"
-import { offlineStorage } from "@/lib/offline-storage"
+  type InventoryItem
+} from '@/lib/inventory'
+import { useAuth } from '@/hooks/use-auth'
+import { useOffline } from '@/hooks/use-offline'
+import { offlineStorage } from '@/lib/offline-storage'
 
 export function InventoryDashboard() {
   const [items, setItems] = useState<InventoryItem[]>([])
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [searchTerm, setSearchTerm] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
-  const [stockAdjustment, setStockAdjustment] = useState("")
-  const [usageQuantity, setUsageQuantity] = useState("")
-  const [usageNotes, setUsageNotes] = useState("")
+  const [stockAdjustment, setStockAdjustment] = useState('')
+  const [usageQuantity, setUsageQuantity] = useState('')
+  const [usageNotes, setUsageNotes] = useState('')
   const { auth } = useAuth()
   const { online, saveOfflineChange } = useOffline()
 
@@ -66,7 +95,7 @@ export function InventoryDashboard() {
         setItems(inventoryData)
         setFilteredItems(inventoryData)
       } catch (error) {
-        console.error("[v0] Failed to load inventory data:", error)
+        console.error('[v0] Failed to load inventory data:', error)
         // Fallback to mock data
         const inventoryData = getInventoryItems()
         setItems(inventoryData)
@@ -84,15 +113,15 @@ export function InventoryDashboard() {
       filtered = filtered.filter(
         (item) =>
           item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.category.toLowerCase().includes(searchTerm.toLowerCase()),
+          item.category.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
-    if (categoryFilter !== "all") {
+    if (categoryFilter !== 'all') {
       filtered = filtered.filter((item) => item.category === categoryFilter)
     }
 
-    if (statusFilter !== "all") {
+    if (statusFilter !== 'all') {
       filtered = filtered.filter((item) => item.status === statusFilter)
     }
 
@@ -103,19 +132,19 @@ export function InventoryDashboard() {
   const categorySummary = getCategorySummary()
   const categories = Array.from(new Set(items.map((item) => item.category)))
 
-  const getStatusBadge = (status: InventoryItem["status"]) => {
+  const getStatusBadge = (status: InventoryItem['status']) => {
     const variants = {
-      "in-stock": "default",
-      "low-stock": "secondary",
-      "out-of-stock": "destructive",
-      expired: "destructive",
+      'in-stock': 'default',
+      'low-stock': 'secondary',
+      'out-of-stock': 'destructive',
+      expired: 'destructive'
     } as const
 
     const labels = {
-      "in-stock": "In Stock",
-      "low-stock": "Low Stock",
-      "out-of-stock": "Out of Stock",
-      expired: "Expired",
+      'in-stock': 'In Stock',
+      'low-stock': 'Low Stock',
+      'out-of-stock': 'Out of Stock',
+      expired: 'Expired'
     }
 
     return <Badge variant={variants[status]}>{labels[status]}</Badge>
@@ -129,22 +158,26 @@ export function InventoryDashboard() {
         updateStock(selectedItem.id, newStock)
       } else {
         // Save change for offline sync
-        await saveOfflineChange("updateStock", {
+        await saveOfflineChange('updateStock', {
           itemId: selectedItem.id,
           newStock,
-          timestamp: Date.now(),
+          timestamp: Date.now()
         })
       }
 
       // Update local state immediately
       const updatedItems = items.map((item) =>
         item.id === selectedItem.id
-          ? { ...item, currentStock: newStock, status: newStock <= item.minThreshold ? "low-stock" : "in-stock" }
-          : item,
+          ? {
+              ...item,
+              currentStock: newStock,
+              status: newStock <= item.minThreshold ? 'low-stock' : 'in-stock'
+            }
+          : item
       )
       setItems(updatedItems)
 
-      setStockAdjustment("")
+      setStockAdjustment('')
       setSelectedItem(null)
     }
   }
@@ -157,12 +190,12 @@ export function InventoryDashboard() {
         logUsage(selectedItem.id, quantity, auth.user.name, usageNotes)
       } else {
         // Save change for offline sync
-        await saveOfflineChange("logUsage", {
+        await saveOfflineChange('logUsage', {
           itemId: selectedItem.id,
           quantity,
           userName: auth.user.name,
           notes: usageNotes,
-          timestamp: Date.now(),
+          timestamp: Date.now()
         })
       }
 
@@ -173,19 +206,27 @@ export function InventoryDashboard() {
           ? {
               ...item,
               currentStock: Math.max(0, newStock),
-              status: newStock <= 0 ? "out-of-stock" : newStock <= item.minThreshold ? "low-stock" : "in-stock",
+              status:
+                newStock <= 0
+                  ? 'out-of-stock'
+                  : newStock <= item.minThreshold
+                  ? 'low-stock'
+                  : 'in-stock'
             }
-          : item,
+          : item
       )
       setItems(updatedItems)
 
-      setUsageQuantity("")
-      setUsageNotes("")
+      setUsageQuantity('')
+      setUsageNotes('')
       setSelectedItem(null)
     }
   }
 
-  const totalValue = items.reduce((sum, item) => sum + item.currentStock * item.costPerUnit, 0)
+  const totalValue = items.reduce(
+    (sum, item) => sum + item.currentStock * item.costPerUnit,
+    0
+  )
 
   return (
     <div className="space-y-6">
@@ -193,68 +234,91 @@ export function InventoryDashboard() {
         <Alert className="border-accent/50 bg-accent/10">
           <WifiOff className="h-4 w-4" />
           <AlertDescription>
-            <strong>Offline Mode:</strong> Changes will be saved locally and synced when connection is restored.
+            <strong>Offline Mode:</strong> Changes will be saved locally and synced when
+            connection is restored.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Alerts Section */}
-      {alerts.length > 0 && (
-        <Alert className="border-destructive/50 bg-destructive/10">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>{alerts.length} items</strong> require attention: {alerts.length} low/out of stock
-          </AlertDescription>
-        </Alert>
-      )}
+      <Alert className="border-red-600/20 bg-red-600/10 ">
+        <div className="mr-2 flex items-center h-full">
+          <AlertTriangle className="min-h-7 min-w-7 text-red-600" />
+        </div>
+        <AlertDescription className="text-red-600 ml-10 flex justify-between items-center">
+          <div>
+            <strong>{alerts.length} items</strong>
+            <div>require attention: {alerts.length} low/out of stock</div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-red-600 text-white hover:bg-red-400 cursor-pointer 
+             ring-inset ring-[0.5px] ring-red-400 border-red-700"
+          >
+            Check Supplies
+          </Button>
+        </AlertDescription>
+      </Alert>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Items</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+        <Card className="bg-[#f1f1f1] py-4 overflow-hidden flex flex-col justify-between">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="xl:text-xl text-lg font-lg tracking-tight">
+              Total Items
+            </CardTitle>
+            <Package className="absolute min-h-40 min-w-40 top-0 2xl:left-[12rem] xl:left-[11vw] md:-right-10 right-0 opacity-30" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{items.length}</div>
-            <p className="text-xs text-muted-foreground">Across {categories.length} categories</p>
+            <div className="xl:text-4xl text-xl font-bold">{items.length}</div>
+            <p className="text-xs text-foreground">
+              Across {categories.length} categories
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
-            <TrendingDown className="h-4 w-4 text-secondary" />
+        <Card className="bg-yellow-600/10 py-4 border-yellow-600/20  overflow-hidden flex flex-col justify-between">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="xl:text-xl text-lg font-lg tracking-tight text-yellow-400">
+              Low Stock Alerts
+            </CardTitle>
+            <TrendingDown className="absolute min-h-40 min-w-40 text-yellow-600 top-0 2xl:left-[12rem] xl:left-[11vw] md:-right-10 right-0 opacity-30" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-secondary">
-              {alerts.filter((item) => item.status === "low-stock").length}
+            <div className="xl:text-4xl text-xl font-bold text-yellow-400">
+              {alerts.filter((item) => item.status === 'low-stock').length}
             </div>
-            <p className="text-xs text-muted-foreground">Items below threshold</p>
+            <p className="text-xs text-foreground">Items below threshold</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
+        <Card className="bg-red-600/10 py-4 border-red-600/20  overflow-hidden flex flex-col justify-between">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="xl:text-xl text-lg font-lg tracking-tight text-red-400">
+              Out of Stock
+            </CardTitle>
+            <AlertTriangle className="absolute min-h-40 min-w-40 text-red-600 top-0 2xl:left-[12rem] xl:left-[11vw] md:-right-10 right-0 opacity-30 scale-x-[-1]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              {alerts.filter((item) => item.status === "out-of-stock").length}
+            <div className="xl:text-4xl text-xl font-bold text-red-400">
+              {alerts.filter((item) => item.status === 'out-of-stock').length}
             </div>
-            <p className="text-xs text-muted-foreground">Items need reordering</p>
+            <p className="text-xs text-foreground">Items need reordering</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        <Card className="bg-sky-600/10 py-4 border-sky-600/20  overflow-hidden flex flex-col justify-between">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="xl:text-xl text-lg font-lg tracking-tight text-sky-400">
+              Total Value
+            </CardTitle>
+            <TrendingUp className="absolute min-h-40 min-w-40 text-sky-600 top-0 2xl:left-[12rem] xl:left-[11vw] md:-right-10 right-0 opacity-30 scale-x-[-1]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalValue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Current inventory value</p>
+            <div className="xl:text-4xl text-xl font-bold text-sky-400">
+              ${totalValue.toFixed(2)}
+            </div>
+            <p className="text-xs text-foreground">Current inventory value</p>
           </CardContent>
         </Card>
       </div>
@@ -262,8 +326,10 @@ export function InventoryDashboard() {
       {/* Filters and Search */}
       <Card>
         <CardHeader>
-          <CardTitle>Inventory Management</CardTitle>
-          <CardDescription>Track and manage your medical supplies and equipment</CardDescription>
+          <CardTitle className="font-bold text-xl">Inventory Management</CardTitle>
+          <CardDescription>
+            Track and manage your medical supplies and equipment
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -274,12 +340,12 @@ export function InventoryDashboard() {
                   placeholder="Search items..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
+                  className="pl-8 bg-white"
                 />
               </div>
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px] bg-white">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -292,7 +358,7 @@ export function InventoryDashboard() {
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px] bg-white">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -305,8 +371,8 @@ export function InventoryDashboard() {
           </div>
 
           {/* Inventory Table */}
-          <div className="rounded-md border">
-            <Table>
+          <div className="rounded-md border bg-white overflow-x-scroll max-w-[80vw]">
+            <Table className="">
               <TableHeader>
                 <TableRow>
                   <TableHead>Item</TableHead>
@@ -341,14 +407,20 @@ export function InventoryDashboard() {
                       <div className="flex gap-2">
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedItem(item)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedItem(item)}
+                            >
                               <Plus className="h-3 w-3" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
                               <DialogTitle>Update Stock - {item.name}</DialogTitle>
-                              <DialogDescription>Adjust the current stock level for this item.</DialogDescription>
+                              <DialogDescription>
+                                Adjust the current stock level for this item.
+                              </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
                               <div>
@@ -370,14 +442,20 @@ export function InventoryDashboard() {
 
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedItem(item)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedItem(item)}
+                            >
                               <Minus className="h-3 w-3" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
                               <DialogTitle>Log Usage - {item.name}</DialogTitle>
-                              <DialogDescription>Record usage of this item and update stock levels.</DialogDescription>
+                              <DialogDescription>
+                                Record usage of this item and update stock levels.
+                              </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
                               <div>
