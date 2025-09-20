@@ -148,11 +148,11 @@ export function AdminDashboard() {
 
       {/* Critical Alerts Section */}
       {alerts.length > 0 && (
-        <Alert className="border-red-300 bg-red-200 ">
+        <Alert className="border-red-600/20 bg-red-600/10 ">
           <div className="mr-2 flex items-center h-full">
-            <AlertTriangle className="min-h-7 min-w-7 text-red-800" />
+            <AlertTriangle className="min-h-7 min-w-7 text-red-600" />
           </div>
-          <AlertDescription className="text-red-800 ml-10 flex justify-between items-center">
+          <AlertDescription className="text-red-600 ml-10 flex justify-between items-center">
             <div>
               <strong>System Alerts:</strong>
               <div>
@@ -175,9 +175,9 @@ export function AdminDashboard() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-[#f1f1f1]">
+        <Card className="bg-blue-600/5">
           <CardHeader>
-            <CardTitle>Monthly Spending Trends</CardTitle>
+            <CardTitle className="font-bold text-xl">Monthly Spending Trends</CardTitle>
             <CardDescription>Inventory spending over the last 12 months</CardDescription>
           </CardHeader>
           <CardContent>
@@ -200,9 +200,9 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-[#f1f1f1]">
+        <Card className="bg-blue-600/5">
           <CardHeader>
-            <CardTitle>Weekly User Activity</CardTitle>
+            <CardTitle className="font-bold text-xl">Weekly User Activity</CardTitle>
             <CardDescription>System usage and order activity</CardDescription>
           </CardHeader>
           <CardContent>
@@ -222,9 +222,9 @@ export function AdminDashboard() {
 
       {/* Management Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="bg-[#f1f1f1]">
+        <Card className="bg-blue-600/5">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 font-bold text-xl">
               <Users className="h-5 w-5" />
               User Management
             </CardTitle>
@@ -234,19 +234,19 @@ export function AdminDashboard() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Active Users:</span>
-                <Badge>3</Badge>
+                <Badge className="bg-[#256ef0]">3</Badge>
               </div>
               <div className="flex justify-between">
                 <span>Admins:</span>
-                <Badge>1</Badge>
+                <Badge className="bg-[#256ef0]">1</Badge>
               </div>
               <div className="flex justify-between">
                 <span>Doctors:</span>
-                <Badge>1</Badge>
+                <Badge className="bg-[#256ef0]">1</Badge>
               </div>
               <div className="flex justify-between">
                 <span>Nurses:</span>
-                <Badge>1</Badge>
+                <Badge className="bg-[#256ef0]">1</Badge>
               </div>
             </div>
             <Button className="w-full mt-4 bg-transparent" variant="outline">
@@ -255,9 +255,9 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-[#f1f1f1]">
+        <Card className="bg-blue-600/5">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 font-bold text-xl">
               <Package className="h-5 w-5" />
               Inventory Overview
             </CardTitle>
@@ -267,17 +267,19 @@ export function AdminDashboard() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Total Items:</span>
-                <Badge>{inventoryItems.length}</Badge>
+                <Badge className="bg-[#256ef0]">{inventoryItems.length}</Badge>
               </div>
               <div className="flex justify-between">
                 <span>In Stock:</span>
-                <Badge variant="default">
+                <Badge className="bg-[#256ef0]" variant="default">
                   {inventoryItems.filter((item) => item.status === 'in-stock').length}
                 </Badge>
               </div>
               <div className="flex justify-between">
                 <span>Low Stock:</span>
-                <Badge variant="secondary">{lowStockAlerts}</Badge>
+                <Badge className="bg-[#256ef0]" variant="secondary">
+                  {lowStockAlerts}
+                </Badge>
               </div>
               <div className="flex justify-between">
                 <span>Out of Stock:</span>
@@ -290,9 +292,9 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-blue-600/5">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2  font-bold text-xl">
               <Activity className="h-5 w-5" />
               System Performance
             </CardTitle>
@@ -302,19 +304,19 @@ export function AdminDashboard() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Uptime:</span>
-                <Badge className="bg-green-600 text-white border-green-700">98.5%</Badge>
+                <Badge className="bg-[#256ef0] text-white border-blue-700">98.5%</Badge>
               </div>
               <div className="flex justify-between">
                 <span>Response Time:</span>
-                <Badge className="bg-green-600 text-white border-green-700">120ms</Badge>
+                <Badge className="bg-[#256ef0] text-white border-blue-700">120ms</Badge>
               </div>
               <div className="flex justify-between">
                 <span>Active Sessions:</span>
-                <Badge>3</Badge>
+                <Badge className="bg-[#256ef0]">3</Badge>
               </div>
               <div className="flex justify-between">
                 <span>Data Sync:</span>
-                <Badge className="bg-green-600 text-white border-green-700">Online</Badge>
+                <Badge className="bg-[#256ef0] text-white border-blue-700">Online</Badge>
               </div>
             </div>
             <Button className="w-full mt-4 bg-transparent" variant="outline">
