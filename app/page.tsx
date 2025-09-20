@@ -1,9 +1,9 @@
-"use client"
+'use client'
 
-import { useAuth } from "@/hooks/use-auth"
-import { LoginForm } from "@/components/login-form"
-import { DashboardLayout } from "@/components/dashboard-layout"
-import { Loader2 } from "lucide-react"
+import { useAuth } from '@/hooks/use-auth'
+import { LoginForm } from '@/components/login-form'
+import { DashboardLayout } from '@/components/dashboard-layout'
+import { Loader2 } from 'lucide-react'
 
 export default function HomePage() {
   const { auth } = useAuth()
