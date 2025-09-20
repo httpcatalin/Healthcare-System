@@ -1,13 +1,25 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useState, useEffect } from 'react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   LineChart,
   Line,
@@ -19,20 +31,32 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
-} from "recharts"
-import { TrendingUp, AlertTriangle, DollarSign, Activity, Target, Zap } from "lucide-react"
-import { getInventoryItems } from "@/lib/inventory"
-import { getForecastingEngine, type ForecastData, type AnalyticsData, type SimulationResult } from "@/lib/forecasting"
+  ResponsiveContainer
+} from 'recharts'
+import {
+  TrendingUp,
+  AlertTriangle,
+  DollarSign,
+  Activity,
+  Target,
+  Zap
+} from 'lucide-react'
+import { getInventoryItems } from '@/lib/inventory'
+import {
+  getForecastingEngine,
+  type ForecastData,
+  type AnalyticsData,
+  type SimulationResult
+} from '@/lib/forecasting'
 
 export function AnalyticsDashboard() {
   const [items, setItems] = useState<any[]>([])
   const [forecasts, setForecasts] = useState<ForecastData[]>([])
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [simulation, setSimulation] = useState<SimulationResult | null>(null)
-  const [simulationScenario, setSimulationScenario] = useState("patient-increase")
-  const [simulationMultiplier, setSimulationMultiplier] = useState("1.2")
-  const [selectedTimeframe, setSelectedTimeframe] = useState("30")
+  const [simulationScenario, setSimulationScenario] = useState('patient-increase')
+  const [simulationMultiplier, setSimulationMultiplier] = useState('1.2')
+  const [selectedTimeframe, setSelectedTimeframe] = useState('30')
 
   const forecastingEngine = getForecastingEngine()
 
@@ -42,7 +66,12 @@ export function AnalyticsDashboard() {
 
     // Generate forecasts
     const forecastData = inventoryData.map((item) =>
-      forecastingEngine.generateForecast(item.id, item.name, item.currentStock, item.minThreshold),
+      forecastingEngine.generateForecast(
+        item.id,
+        item.name,
+        item.currentStock,
+        item.minThreshold
+      )
     )
     setForecasts(forecastData)
 
@@ -55,10 +84,12 @@ export function AnalyticsDashboard() {
     const multiplier = Number.parseFloat(simulationMultiplier)
     const scenarioName =
       {
-        "patient-increase": `${((multiplier - 1) * 100).toFixed(0)}% Patient Load Increase`,
-        "seasonal-surge": "Seasonal Surge",
-        emergency: "Emergency Scenario",
-      }[simulationScenario] || "Custom Scenario"
+        'patient-increase': `${((multiplier - 1) * 100).toFixed(
+          0
+        )}% Patient Load Increase`,
+        'seasonal-surge': 'Seasonal Surge',
+        emergency: 'Emergency Scenario'
+      }[simulationScenario] || 'Custom Scenario'
 
     const result = forecastingEngine.runSimulation(items, scenarioName, multiplier)
     setSimulation(result)
@@ -66,15 +97,19 @@ export function AnalyticsDashboard() {
 
   const getRiskBadge = (riskLevel: string) => {
     const variants = {
-      low: "default",
-      medium: "secondary",
-      high: "destructive",
+      low: 'default',
+      medium: 'secondary',
+      high: 'destructive'
     } as const
 
-    return <Badge variant={variants[riskLevel as keyof typeof variants]}>{riskLevel.toUpperCase()} RISK</Badge>
+    return (
+      <Badge variant={variants[riskLevel as keyof typeof variants]}>
+        {riskLevel.toUpperCase()} RISK
+      </Badge>
+    )
   }
 
-  const COLORS = ["#164e63", "#a16207", "#dc2626", "#059669", "#7c3aed", "#ea580c"]
+  const COLORS = ['#164e63', '#a16207', '#dc2626', '#059669', '#7c3aed', '#ea580c']
 
   if (!analytics) {
     return <div>Loading analytics...</div>
@@ -96,7 +131,9 @@ export function AnalyticsDashboard() {
             <div className="text-3xl font-bold font-heading bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               ${analytics.totalSpend.toFixed(2)}
             </div>
-            <p className="text-sm text-muted-foreground mt-2 font-medium">Current stock value</p>
+            <p className="text-sm text-muted-foreground mt-2 font-medium">
+              Current stock value
+            </p>
           </CardContent>
         </Card>
 
@@ -111,9 +148,11 @@ export function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-heading text-destructive">
-              {forecasts.filter((f) => f.riskLevel === "high").length}
+              {forecasts.filter((f) => f.riskLevel === 'high').length}
             </div>
-            <p className="text-sm text-muted-foreground mt-2 font-medium">High risk stockouts</p>
+            <p className="text-sm text-muted-foreground mt-2 font-medium">
+              High risk stockouts
+            </p>
           </CardContent>
         </Card>
 
@@ -128,9 +167,15 @@ export function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-heading bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-              {((forecasts.reduce((sum, f) => sum + f.confidence, 0) / forecasts.length) * 100).toFixed(0)}%
+              {(
+                (forecasts.reduce((sum, f) => sum + f.confidence, 0) / forecasts.length) *
+                100
+              ).toFixed(0)}
+              %
             </div>
-            <p className="text-sm text-muted-foreground mt-2 font-medium">AI prediction accuracy</p>
+            <p className="text-sm text-muted-foreground mt-2 font-medium">
+              AI prediction accuracy
+            </p>
           </CardContent>
         </Card>
 
@@ -146,9 +191,13 @@ export function AnalyticsDashboard() {
           <CardContent>
             <div className="text-3xl font-bold font-heading flex items-center gap-2">
               <TrendingUp className="h-6 w-6 text-green-600" />
-              <span className="bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">+12%</span>
+              <span className="bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
+                +12%
+              </span>
             </div>
-            <p className="text-sm text-muted-foreground mt-2 font-medium">Usage vs last month</p>
+            <p className="text-sm text-muted-foreground mt-2 font-medium">
+              Usage vs last month
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -168,20 +217,22 @@ export function AnalyticsDashboard() {
         <CardContent>
           <div className="space-y-6">
             {forecasts
-              .filter((forecast) => forecast.riskLevel !== "low")
+              .filter((forecast) => forecast.riskLevel !== 'low')
               .map((forecast) => (
                 <Alert
                   key={forecast.itemId}
                   className={`glass border-l-4 shadow-sm hover-lift transition-all duration-300 ${
-                    forecast.riskLevel === "high"
-                      ? "border-l-destructive border-destructive/30 bg-destructive/5"
-                      : "border-l-secondary border-secondary/30 bg-secondary/5"
+                    forecast.riskLevel === 'high'
+                      ? 'border-l-destructive border-destructive/30 bg-destructive/5'
+                      : 'border-l-secondary border-secondary/30 bg-secondary/5'
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
-                        <h4 className="font-bold text-lg font-heading">{forecast.itemName}</h4>
+                        <h4 className="font-bold text-lg font-heading">
+                          {forecast.itemName}
+                        </h4>
                         {getRiskBadge(forecast.riskLevel)}
                       </div>
                       <AlertDescription>
@@ -198,7 +249,9 @@ export function AnalyticsDashboard() {
                             <span className="font-semibold text-muted-foreground uppercase tracking-wide text-xs">
                               Current stock:
                             </span>
-                            <div className="text-lg font-semibold">{forecast.currentStock} units</div>
+                            <div className="text-lg font-semibold">
+                              {forecast.currentStock} units
+                            </div>
                           </div>
                           <div className="space-y-1">
                             <span className="font-semibold text-muted-foreground uppercase tracking-wide text-xs">
@@ -237,7 +290,11 @@ export function AnalyticsDashboard() {
           <div className="p-4 bg-gradient-to-br from-muted/30 to-transparent rounded-2xl">
             <ResponsiveContainer width="100%" height={350}>
               <LineChart data={analytics.usageTrends}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.3} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border))"
+                  strokeOpacity={0.3}
+                />
                 <XAxis
                   dataKey="date"
                   tickFormatter={(date) => new Date(date).toLocaleDateString()}
@@ -245,15 +302,19 @@ export function AnalyticsDashboard() {
                   fontSize={12}
                   fontWeight={500}
                 />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} fontWeight={500} />
+                <YAxis
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  fontWeight={500}
+                />
                 <Tooltip
                   labelFormatter={(date) => new Date(date).toLocaleDateString()}
                   contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "12px",
-                    boxShadow: "0 10px 25px -3px rgba(0, 0, 0, 0.1)",
-                    backdropFilter: "blur(16px)",
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1)',
+                    backdropFilter: 'blur(16px)'
                   }}
                 />
                 <Legend />
@@ -263,8 +324,13 @@ export function AnalyticsDashboard() {
                   stroke="hsl(var(--primary))"
                   strokeWidth={3}
                   name="Total Usage"
-                  dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: "hsl(var(--primary))", strokeWidth: 2, fill: "hsl(var(--background))" }}
+                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                  activeDot={{
+                    r: 6,
+                    stroke: 'hsl(var(--primary))',
+                    strokeWidth: 2,
+                    fill: 'hsl(var(--background))'
+                  }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -289,7 +355,9 @@ export function AnalyticsDashboard() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ category, percentage }) => `${category} (${percentage.toFixed(1)}%)`}
+                    label={({ category, percentage }: any) =>
+                      `${category} (${percentage.toFixed(1)}%)`
+                    }
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="totalValue"
@@ -301,13 +369,13 @@ export function AnalyticsDashboard() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number) => [`$${value.toFixed(2)}`, "Value"]}
+                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Value']}
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "12px",
-                      boxShadow: "0 10px 25px -3px rgba(0, 0, 0, 0.1)",
-                      backdropFilter: "blur(16px)",
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '12px',
+                      boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1)',
+                      backdropFilter: 'blur(16px)'
                     }}
                   />
                 </PieChart>
@@ -336,7 +404,9 @@ export function AnalyticsDashboard() {
                     </div>
                     <div>
                       <p className="font-bold text-lg font-heading">{item.name}</p>
-                      <p className="text-sm text-muted-foreground font-medium">Weekly usage: {item.usage} units</p>
+                      <p className="text-sm text-muted-foreground font-medium">
+                        Weekly usage: {item.usage} units
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -358,7 +428,9 @@ export function AnalyticsDashboard() {
             <Zap className="h-5 w-5" />
             Scenario Simulation
           </CardTitle>
-          <CardDescription>Predict inventory needs under different scenarios</CardDescription>
+          <CardDescription>
+            Predict inventory needs under different scenarios
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -400,9 +472,11 @@ export function AnalyticsDashboard() {
                 <AlertDescription>
                   <strong>Scenario:</strong> {simulation.scenario}
                   <br />
-                  <strong>Critical Items:</strong> {simulation.criticalItems.length} items need immediate attention
+                  <strong>Critical Items:</strong> {simulation.criticalItems.length} items
+                  need immediate attention
                   <br />
-                  <strong>Additional Cost:</strong> ${simulation.totalAdditionalCost.toFixed(2)}
+                  <strong>Additional Cost:</strong> $
+                  {simulation.totalAdditionalCost.toFixed(2)}
                 </AlertDescription>
               </Alert>
 
@@ -420,7 +494,13 @@ export function AnalyticsDashboard() {
                           </div>
                           <div className="flex justify-between">
                             <span>Projected Stock:</span>
-                            <span className={item.projectedStock <= 0 ? "text-destructive font-medium" : ""}>
+                            <span
+                              className={
+                                item.projectedStock <= 0
+                                  ? 'text-destructive font-medium'
+                                  : ''
+                              }
+                            >
                               {item.projectedStock}
                             </span>
                           </div>
@@ -431,7 +511,9 @@ export function AnalyticsDashboard() {
                           {item.additionalOrderNeeded > 0 && (
                             <div className="flex justify-between text-destructive">
                               <span>Additional Order:</span>
-                              <span className="font-medium">+{item.additionalOrderNeeded}</span>
+                              <span className="font-medium">
+                                +{item.additionalOrderNeeded}
+                              </span>
                             </div>
                           )}
                         </div>

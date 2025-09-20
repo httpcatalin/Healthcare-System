@@ -127,8 +127,8 @@ export function DashboardLayout() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full via-muted/30 to-background">
-        <Sidebar className="border-r border-sidebar-border/50 glass">
+      <div className="min-h-screen flex w-full">
+        <Sidebar className="border-r border-sidebar-border/50">
           <SidebarHeader className="border-b border-sidebar-border/30 py-2.5 px-4 bg-[#f1f1f1]">
             <div className="flex items-center gap-3">
               <div className="relative p-3 bg-[#256ef0] rounded-2xl shadow-premium hover-lift">
@@ -336,11 +336,11 @@ export function DashboardLayout() {
           </header>
 
           <main className="flex-1 p-8 bg-gradient-to-br from-background via-muted/20 to-accent/5 min-h-0">
-            <div className="max-w-7xl mx-auto h-full">
-              <div className="glass rounded-3xl border border-border/30 shadow-premium p-8 h-full backdrop-blur-xl bg-red-500">
-                {renderCurrentView()}
-              </div>
-            </div>
+            {/* <div className="max-w-7xl mx-auto h-full">
+              <div className="glass rounded-3xl border border-border/30 shadow-premium p-8 h-full backdrop-blur-xl"> */}
+            <div className="max-w-[85rem] mx-auto">{renderCurrentView()}</div>
+            {/* </div>
+            </div> */}
           </main>
         </div>
         <OfflineIndicator />
