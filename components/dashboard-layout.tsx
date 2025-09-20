@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { OfflineIndicator } from '@/components/offline-indicator'
+import { LuMail, LuIdCard, LuLinkedin, LuCircleUser } from 'react-icons/lu'
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -106,8 +108,8 @@ export function DashboardLayout() {
       return [
         ...baseItems,
         { name: 'Analytics', href: '#analytics', icon: BarChart3, current: false },
-        { name: 'Purchase Orders', href: '#orders', icon: FileText, current: false },
-        { name: 'Settings', href: '#settings', icon: Settings, current: false }
+        { name: 'Purchase Orders', href: '#orders', icon: FileText, current: false }
+        // { name: 'Settings', href: '#settings', icon: Settings, current: false }
       ]
     } else if (auth.user?.role === 'doctor') {
       return [
@@ -125,14 +127,14 @@ export function DashboardLayout() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-background via-muted/30 to-background">
         <Sidebar className="border-r border-sidebar-border/50 glass">
-          <SidebarHeader className="border-b border-sidebar-border/30 p-6">
-            <div className="flex items-center gap-4">
-              <div className="relative p-3 bg-gradient-to-br from-primary via-primary to-secondary rounded-2xl shadow-premium hover-lift">
-                <Stethoscope className="h-8 w-8 text-white drop-shadow-sm" />
+          <SidebarHeader className="border-b border-sidebar-border/30 py-2.5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="relative p-3 bg-[#256ef0] rounded-2xl shadow-premium hover-lift">
+                <Stethoscope className="h-6 w-6 text-white drop-shadow-sm" />
                 <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-2xl"></div>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-sidebar-foreground font-heading tracking-tight">
+                <h2 className="text-xl font-bold text-sidebar-foreground font-heading tracking-tight">
                   HealthCare RM
                 </h2>
                 <p className="text-sm text-sidebar-foreground font-medium tracking-wide">
@@ -141,50 +143,98 @@ export function DashboardLayout() {
               </div>
             </div>
           </SidebarHeader>
-          <SidebarContent className="p-6">
-            <div className="mb-8 p-5 glass rounded-2xl border border-sidebar-border/30 shadow-premium hover-lift">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12 ring-2 ring-sidebar-accent/30 shadow-lg">
-                  <AvatarImage
-                    src={auth.user?.avatar || '/placeholder.svg'}
-                    alt={auth.user?.name}
-                  />
-                  <AvatarFallback className="bg-gradient-to-br from-sidebar-accent to-sidebar-primary text-white font-bold text-lg">
-                    {auth.user?.name
-                      ?.split(' ')
-                      .map((n) => n[0])
-                      .join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-base font-bold text-sidebar-foreground truncate font-heading">
+
+          <SidebarContent className="p-3">
+            <div className="mb-3 bg-white p-3 rounded-md border-neutral-200 border-1">
+              <div className="">
+                <div className="flex items-center gap-2 mb-4">
+                  <Avatar className="h-8 w-8 ring-1 ring-neutral-400">
+                    <AvatarImage
+                      src={auth.user?.avatar || '/placeholder.svg'}
+                      alt={auth.user?.name}
+                    />
+                    <AvatarFallback className="bg-gradient-to-br from-sidebar-accent to-sidebar-primary text-white font-bold text-lg">
+                      {auth.user?.name
+                        ?.split(' ')
+                        .map((n) => n[0])
+                        .join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="text-base font-semibold text-sidebar-foreground truncate font-heading tracking-tight">
                     {auth.user?.name}
                   </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge
-                      variant="secondary"
-                      className="text-xs px-3 py-1 bg-gradient-to-r from-sidebar-accent/30 to-sidebar-primary/30 text-sidebar-foreground font-semibold border border-sidebar-accent/30 shadow-sm"
-                    >
+                </div>
+                <div className="flex-1 min-w-0 text-sm flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2 text-sm opacity-65 text-bold">
+                      <LuMail /> Email
+                    </div>
+                    <span className="truncate text-blue-500 border-1 border-blue-500 px-1 rounded-sm text-[12px]">
+                      {auth.user?.email}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2 text-sm opacity-65 text-bold">
+                      <LuIdCard /> Role
+                    </div>
+                    <span className="truncate text-[12px] opacity-100 font-semibold">
                       {auth.user?.role}
-                    </Badge>
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2 text-sm opacity-65 text-bold">
+                      <LuLinkedin /> LinkedIn
+                    </div>
+                    <span className="truncate text-[12px] opacity-100 font-semibold">
+                      /
+                      {auth.user?.name
+                        ?.toLowerCase()
+                        .replace(' ', '')
+                        .replace('.', '')
+                        .replace(' ', '')}
+                    </span>
                   </div>
                 </div>
+
+                <button className="text-red hover:before:bg-redborder-red-500 text-sm relative w-full overflow-hidden px-3 text-white py-0.5 font-semibold rounded-sm shadow-2xl transition-all before:absolute before:bottom-0 before:left-0 before:top-0 before:z-0 before:h-full before:w-0 before:bg-white before:transition-all before:duration-500 hover:shadow-blue-500 hover:before:left-0 hover:before:w-full bg-[#256ef0] border-1 border-blue-600 hover:text-[#256ef0] mt-3 cursor-pointer">
+                  <span className="relative z-10 flex gap-2 items-center justify-center">
+                    <LuCircleUser />
+                    Go to Profile
+                  </span>
+                </button>
               </div>
             </div>
 
-            <SidebarMenu className="space-y-3">
-              {getNavigationItems().map((item) => (
-                <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton
-                    onClick={() => handleNavigation(item.name)}
-                    isActive={currentView === item.name}
-                    className="w-full justify-start gap-4 px-5 py-4 rounded-xl transition-all duration-300 hover:bg-sidebar-accent/10 hover:shadow-sm hover-lift data-[active=true]:bg-gradient-to-r data-[active=true]:from-sidebar-primary data-[active=true]:to-sidebar-accent data-[active=true]:text-white data-[active=true]:shadow-premium data-[active=true]:border data-[active=true]:border-sidebar-primary/20"
-                  >
-                    <item.icon className="h-5 w-5 flex-shrink-0" />
-                    <span className="font-semibold tracking-wide">{item.name}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <hr className="border-0 h-[1px] bg-gray-200" />
+
+            <SidebarMenu className="flex flex-col justify-between h-full">
+              <div className="space-y-1">
+                {getNavigationItems().map((item) => (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton
+                      onClick={() => handleNavigation(item.name)}
+                      isActive={currentView === item.name}
+                      className="w-full justify-start gap-2 px-5 py-5 rounded-sm hover:bg-gray-200 hover:text-foreground active:bg-[#256ef0] data-[active=true]:bg-[#256ef0]  data-[active=true]:text-white"
+                    >
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="font-semibold tracking-wide">{item.name}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </div>
+
+              <SidebarMenuItem key={'Settings'}>
+                <SidebarMenuButton
+                  onClick={() => handleNavigation('Settings')}
+                  isActive={currentView === 'Settings'}
+                  className="w-full justify-start gap-2 px-5 py-5 rounded-sm hover:bg-gray-200 hover:text-foreground active:bg-[#256ef0] data-[active=true]:bg-[#256ef0]  data-[active=true]:text-white"
+                >
+                  <Settings className="h-5 w-5 flex-shrink-0" />
+                  <span className="font-semibold tracking-wide">Settings</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>
