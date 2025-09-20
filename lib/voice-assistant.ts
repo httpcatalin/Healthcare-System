@@ -1,231 +1,305 @@
 export interface VoiceCommand {
-  type: "usage" | "query" | "update" | "unknown"
-  action: string
-  item?: string
-  quantity?: number
-  notes?: string
-  confidence: number
+  type: "usage" | "query" | "update" | "unknown";
+  item?: string;
+  quantity?: number;
+  notes?: string;
 }
 
 export interface VoiceResponse {
-  message: string
-  success: boolean
-  data?: any
+  message: string;
+  success: boolean;
+  data?: any;
 }
 
-// Simple NLP patterns for healthcare inventory commands
-const USAGE_PATTERNS = [
-  /(?:used?|consumed?|took)\s+(\d+)\s+(.+?)(?:\s+(?:for|during|in)\s+(.+))?$/i,
-  /(\d+)\s+(.+?)\s+(?:were?|was)\s+used?/i,
-  /we\s+used?\s+(\d+)\s+(.+)/i,
-]
-
-const QUERY_PATTERNS = [
-  /(?:how\s+many|what's\s+the\s+stock\s+of|check\s+stock\s+for)\s+(.+)/i,
-  /(?:do\s+we\s+have|are\s+there)\s+(?:any\s+)?(.+)/i,
-  /stock\s+(?:level\s+)?(?:of\s+|for\s+)?(.+)/i,
-]
-
-const UPDATE_PATTERNS = [
-  /(?:add|restock|update)\s+(\d+)\s+(.+)/i,
-  /set\s+(.+?)\s+(?:stock\s+)?(?:to\s+)?(\d+)/i,
-  /(\d+)\s+(.+?)\s+(?:added|restocked)/i,
-]
-
-// Mock item name mapping for better recognition
-const ITEM_ALIASES: Record<string, string> = {
-  gloves: "Disposable Gloves",
-  glove: "Disposable Gloves",
-  masks: "Surgical Masks",
-  mask: "Surgical Masks",
-  syringes: "Syringes (10ml)",
-  syringe: "Syringes (10ml)",
-  bandages: "Bandages",
-  bandage: "Bandages",
-  thermometers: "Thermometers",
-  thermometer: "Thermometers",
-  antiseptic: "Antiseptic Solution",
+export interface ProcessVoiceResponse {
+  transcript: string;
+  command: VoiceCommand;
+  response: VoiceResponse;
 }
-
-declare const SpeechRecognition: any // Declare SpeechRecognition
 
 export class VoiceAssistant {
-  private recognition: any | null = null // Use any type for SpeechRecognition
-  private synthesis: SpeechSynthesis | null = null
-  private isListening = false
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioChunks: Blob[] = [];
+  private isListening = false;
+  private synthesis: SpeechSynthesis | null = null;
+  private silenceTimer: NodeJS.Timeout | null = null;
+  private audioContext: AudioContext | null = null;
+  private analyser: AnalyserNode | null = null;
+  private silenceThreshold = 0.01;
+  private silenceDuration = 1500;
 
   constructor() {
     if (typeof window !== "undefined") {
-      // Initialize speech recognition
-      this.recognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition
-      if (this.recognition) {
-        this.recognition.continuous = false
-        this.recognition.interimResults = false
-        this.recognition.lang = "en-US"
-      }
-
-      // Initialize speech synthesis
-      this.synthesis = window.speechSynthesis
+      this.synthesis = window.speechSynthesis;
     }
   }
 
-  async startListening(): Promise<string> {
-    return new Promise((resolve, reject) => {
-      if (!this.recognition) {
-        reject(new Error("Speech recognition not supported"))
-        return
+  async startRecording(): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        reject(new Error("Media devices not supported"));
+        return;
       }
 
-      this.isListening = true
-
-      this.recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript
-        this.isListening = false
-        resolve(transcript)
+      if (!window.MediaRecorder) {
+        reject(new Error("MediaRecorder not supported"));
+        return;
       }
 
-      this.recognition.onerror = (event) => {
-        this.isListening = false
-        reject(new Error(`Speech recognition error: ${event.error}`))
+      try {
+        console.log("Requesting microphone access...");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        console.log("Microphone access granted");
+
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
+          : "audio/ogg";
+
+        console.log("Using MIME type:", mimeType);
+        this.mediaRecorder = new MediaRecorder(stream, {
+          mimeType: mimeType,
+        });
+        this.audioChunks = [];
+
+        this.mediaRecorder.ondataavailable = (event) => {
+          console.log("Audio data available, size:", event.data.size);
+          this.audioChunks.push(event.data);
+        };
+
+        this.mediaRecorder.onstop = () => {
+          console.log("Recording stopped manually");
+          stream.getTracks().forEach((track) => track.stop());
+        };
+
+        this.mediaRecorder.onerror = (event) => {
+          console.error("MediaRecorder error:", event);
+          reject(new Error("Recording failed"));
+          stream.getTracks().forEach((track) => track.stop());
+        };
+
+        this.isListening = true;
+        console.log("Starting recording...");
+        this.mediaRecorder.start(100);
+        resolve();
+      } catch (error) {
+        console.error("Microphone access error:", error);
+        reject(
+          new Error(
+            "Could not access microphone: " +
+              (error instanceof Error ? error.message : String(error))
+          )
+        );
+      }
+    });
+  }
+
+  async stopRecordingAndProcess(): Promise<ProcessVoiceResponse> {
+    return new Promise(async (resolve, reject) => {
+      if (!this.mediaRecorder || !this.isListening) {
+        reject(new Error("No active recording"));
+        return;
       }
 
-      this.recognition.onend = () => {
-        this.isListening = false
-      }
+      this.mediaRecorder.onstop = async () => {
+        console.log("Recording stopped, processing audio...");
 
-      this.recognition.start()
-    })
+        const audioBlob = new Blob(this.audioChunks, {
+          type: this.mediaRecorder?.mimeType || "audio/webm",
+        });
+        console.log("Audio blob created, size:", audioBlob.size);
+
+        if (audioBlob.size < 1000) {
+          reject(new Error("Recording too short or no audio detected"));
+          return;
+        }
+
+        const audioData = await this.blobToBase64(audioBlob);
+        console.log("Audio converted to base64, length:", audioData.length);
+
+        try {
+          console.log("Sending audio to server...");
+          const response = await fetch(
+            "http://localhost:8000/api/process-voice",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                audio: audioData,
+                language: "en",
+              }),
+            }
+          );
+
+          console.log("Server response status:", response.status);
+          if (!response.ok) {
+            throw new Error("Server error: " + response.status);
+          }
+
+          const result: ProcessVoiceResponse = await response.json();
+          console.log("Server response:", result);
+          resolve(result);
+        } catch (error) {
+          console.error("Server error:", error);
+          reject(
+            new Error(
+              "Failed to process audio: " +
+                (error instanceof Error ? error.message : String(error))
+            )
+          );
+        } finally {
+          this.isListening = false;
+        }
+      };
+
+      this.mediaRecorder.stop();
+    });
   }
 
   stopListening() {
-    if (this.recognition && this.isListening) {
-      this.recognition.stop()
-      this.isListening = false
+    if (this.mediaRecorder && this.isListening) {
+      console.log("Stopping recording...");
+      this.mediaRecorder.stop();
+      this.isListening = false;
+      this.cleanupAudioAnalysis();
     }
+  }
+
+  private setupAudioAnalysis(stream: MediaStream) {
+    try {
+      this.audioContext = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+      this.analyser = this.audioContext.createAnalyser();
+      const source = this.audioContext.createMediaStreamSource(stream);
+      source.connect(this.analyser);
+
+      this.analyser.fftSize = 256;
+      const bufferLength = this.analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      const checkSilence = () => {
+        if (!this.isListening) return;
+
+        this.analyser!.getByteFrequencyData(dataArray);
+
+        // Calculate average volume
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / bufferLength;
+        const normalizedVolume = average / 255; // Normalize to 0-1
+
+        console.log("Audio level:", normalizedVolume.toFixed(3));
+
+        if (normalizedVolume < this.silenceThreshold) {
+          if (!this.silenceTimer) {
+            console.log("Silence detected, starting timer...");
+            this.silenceTimer = setTimeout(() => {
+              console.log("Silence timeout reached, stopping recording");
+              this.stopListening();
+            }, this.silenceDuration);
+          }
+        } else {
+          // Speech detected, clear the silence timer
+          if (this.silenceTimer) {
+            console.log("Speech detected, clearing silence timer");
+            clearTimeout(this.silenceTimer);
+            this.silenceTimer = null;
+          }
+        }
+
+        // Continue monitoring
+        requestAnimationFrame(checkSilence);
+      };
+
+      checkSilence();
+    } catch (error) {
+      console.warn("Audio analysis setup failed:", error);
+    }
+  }
+
+  private cleanupAudioAnalysis() {
+    if (this.silenceTimer) {
+      clearTimeout(this.silenceTimer);
+      this.silenceTimer = null;
+    }
+    if (this.audioContext) {
+      this.audioContext.close();
+      this.audioContext = null;
+    }
+    this.analyser = null;
+  }
+
+  private blobToBase64(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   parseCommand(transcript: string): VoiceCommand {
-    const cleanTranscript = transcript.toLowerCase().trim()
-
-    // Check for usage patterns
-    for (const pattern of USAGE_PATTERNS) {
-      const match = cleanTranscript.match(pattern)
-      if (match) {
-        const quantity = Number.parseInt(match[1])
-        const item = this.normalizeItemName(match[2])
-        const notes = match[3] || ""
-
-        return {
-          type: "usage",
-          action: "log_usage",
-          item,
-          quantity,
-          notes,
-          confidence: 0.8,
-        }
-      }
-    }
-
-    // Check for query patterns
-    for (const pattern of QUERY_PATTERNS) {
-      const match = cleanTranscript.match(pattern)
-      if (match) {
-        const item = this.normalizeItemName(match[1])
-
-        return {
-          type: "query",
-          action: "check_stock",
-          item,
-          confidence: 0.8,
-        }
-      }
-    }
-
-    // Check for update patterns
-    for (const pattern of UPDATE_PATTERNS) {
-      const match = cleanTranscript.match(pattern)
-      if (match) {
-        let quantity: number
-        let item: string
-
-        if (pattern === UPDATE_PATTERNS[1]) {
-          // "set item to quantity" pattern
-          item = this.normalizeItemName(match[1])
-          quantity = Number.parseInt(match[2])
-        } else {
-          quantity = Number.parseInt(match[1])
-          item = this.normalizeItemName(match[2])
-        }
-
-        return {
-          type: "update",
-          action: "update_stock",
-          item,
-          quantity,
-          confidence: 0.8,
-        }
-      }
-    }
-
+    // This method is now handled server-side
     return {
       type: "unknown",
-      action: "unknown",
-      confidence: 0.1,
-    }
-  }
-
-  private normalizeItemName(rawName: string): string {
-    const cleaned = rawName.toLowerCase().trim()
-
-    // Check aliases first
-    if (ITEM_ALIASES[cleaned]) {
-      return ITEM_ALIASES[cleaned]
-    }
-
-    // Try partial matches
-    for (const [alias, fullName] of Object.entries(ITEM_ALIASES)) {
-      if (cleaned.includes(alias) || alias.includes(cleaned)) {
-        return fullName
-      }
-    }
-
-    // Return capitalized version if no match
-    return rawName
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ")
+      item: undefined,
+      quantity: undefined,
+      notes: undefined,
+    };
   }
 
   speak(text: string): Promise<void> {
     return new Promise((resolve) => {
       if (!this.synthesis) {
-        resolve()
-        return
+        resolve();
+        return;
       }
 
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.rate = 0.9
-      utterance.pitch = 1
-      utterance.volume = 0.8
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 0.8;
 
-      utterance.onend = () => resolve()
-      utterance.onerror = () => resolve()
+      utterance.onend = () => resolve();
+      utterance.onerror = () => resolve();
 
-      this.synthesis.speak(utterance)
-    })
+      this.synthesis.speak(utterance);
+    });
   }
 
   getIsListening(): boolean {
-    return this.isListening
+    return this.isListening;
+  }
+
+  async playBase64Audio(base64Wav: string): Promise<void> {
+    try {
+      const audio = new Audio(`data:audio/wav;base64,${base64Wav}`);
+      await new Promise<void>((resolve) => {
+        audio.onended = () => resolve();
+        audio.onerror = () => resolve();
+        audio.play().catch(() => resolve());
+      });
+    } catch {
+      // no-op
+    }
   }
 }
 
-// Singleton instance
-let voiceAssistantInstance: VoiceAssistant | null = null
+let voiceAssistantInstance: VoiceAssistant | null = null;
 
 export const getVoiceAssistant = (): VoiceAssistant => {
   if (!voiceAssistantInstance) {
-    voiceAssistantInstance = new VoiceAssistant()
+    voiceAssistantInstance = new VoiceAssistant();
   }
-  return voiceAssistantInstance
-}
+  return voiceAssistantInstance;
+};

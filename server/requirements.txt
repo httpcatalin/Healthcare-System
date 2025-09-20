@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pymongo
+transformers
+torch
+librosa
+pyttsx3
+python-dotenv
+pydantic
+spacy
+numpy
+scipy
+soundfile
