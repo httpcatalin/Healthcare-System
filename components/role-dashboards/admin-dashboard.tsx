@@ -78,7 +78,7 @@ export function AdminDashboard() {
   }, []);
 
   const totalInventoryValue = inventoryItems.reduce(
-    (sum, item) => sum + item.currentStock * item.costPerUnit,
+    (sum, item) => sum + (item.currentStock || 0) * (item.price || 10),
     0
   )
   const pendingOrders = purchaseOrders.filter(

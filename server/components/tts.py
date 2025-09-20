@@ -23,6 +23,7 @@ class TextToSpeech:
         self._load_model()
 
         inputs = self.tokenizer(text, return_tensors="pt")
+        inputs["input_ids"] = inputs["input_ids"].long()  # Ensure input_ids are long tensors
 
         with torch.no_grad():
             output = self.model(**inputs).waveform

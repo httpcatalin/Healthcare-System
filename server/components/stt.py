@@ -5,22 +5,34 @@ import base64
 import librosa
 from pydub import AudioSegment
 
+import os
+
 class SpeechToText:
     def __init__(self):
         self.pipe = None
         self._pipeline_imported = False
-        self._is_multilingual = False
-        self._model_id = "openai/whisper-tiny.en"
+        self._is_multilingual = True
+        # Pick a better multilingual default; allow env override.
+        # Base is reasonable on CPU, Small is better if GPU is available.
+        env_model = os.getenv("STT_MODEL")
+        if env_model:
+            self._model_id = env_model
+        else:
+            # Use larger model if GPU available for better accuracy
+            if torch.cuda.is_available():
+                self._model_id = "openai/whisper-large-v3"
+            else:
+                self._model_id = "openai/whisper-base"
 
     def _load_model(self):
         if self.pipe is None:
-            print("Loading Whisper tiny.en model...")
+            print(f"Loading Whisper model: {self._model_id} ...")
             if not self._pipeline_imported:
                 from transformers import pipeline
                 self._pipeline_imported = True
 
-            # English-only model: do NOT pass language/task
-            self._is_multilingual = False
+            # Multilingual Whisper model
+            self._is_multilingual = True
             self.pipe = pipeline(
                 "automatic-speech-recognition",
                 model=self._model_id,
@@ -28,7 +40,7 @@ class SpeechToText:
                 torch_dtype=torch.float16 if torch.cuda.is_available() else None,
                 chunk_length_s=15,
             )
-            print("Whisper tiny.en model loaded successfully")
+            print(f"Whisper model '{self._model_id}' loaded successfully")
 
     def transcribe(self, audio_data: str, language: str = "en") -> str:
         try:
@@ -60,20 +72,12 @@ class SpeechToText:
             
             print(f"Audio array stats - min: {audio_array.min():.6f}, max: {audio_array.max():.6f}, mean: {audio_array.mean():.6f}")
             
-            # Only set forced decoder ids for multilingual models
-            if self._is_multilingual:
-                lang = language if language in ("en", "ro") else "en"
-                self.pipe.model.generation_config.forced_decoder_ids = self.pipe.tokenizer.get_decoder_prompt_ids(
-                    language=lang,
-                    task="transcribe",
-                )
-            else:
-                # Ensure no language/task is forced for english-only model
-                if hasattr(self.pipe.model, "generation_config"):
-                    self.pipe.model.generation_config.forced_decoder_ids = None
+            # Constrain to English or Romanian only using generate kwargs (preferred to forced_decoder_ids)
+            lang_in = (language or "en").lower()
+            lang = "ro" if lang_in.startswith("ro") else "en"
             
             print("Running Whisper inference...")
-            result = self.pipe(audio_array)
+            result = self.pipe(audio_array, generate_kwargs={"task": "transcribe", "language": lang})
             transcript = result["text"].strip()
             print(f"Transcription result: '{transcript}'")
             

@@ -329,29 +329,37 @@ export class ForecastingEngine {
   }
 
   async generateAnalytics(items: any[]): Promise<AnalyticsData> {
-    const totalSpend = items.reduce(
-      (sum, item) => sum + item.currentStock * 10,
+    // Ensure items have valid numeric values
+    const validItems = items.filter(item => 
+      item && 
+      typeof item.currentStock === 'number' && 
+      !isNaN(item.currentStock) &&
+      item.currentStock >= 0
+    );
+
+    const totalSpend = validItems.reduce(
+      (sum, item) => sum + (item.currentStock || 0) * 10,
       0
     );
 
     const monthlySpend = Array.from({ length: 12 }, (_, i) => {
       const baseSpend = totalSpend * 0.8;
       const seasonal = Math.sin(((i + 1) * Math.PI) / 6) * totalSpend * 0.2;
-      return Math.max(
-        0,
-        baseSpend + seasonal + (Math.random() - 0.5) * totalSpend * 0.1
-      );
+      const randomVariation = (Math.random() - 0.5) * totalSpend * 0.1;
+      const value = baseSpend + seasonal + randomVariation;
+      return Math.max(0, isNaN(value) ? 0 : value);
     });
 
-    const topExpensiveItems = items
+    const topExpensiveItems = validItems
       .map((item) => ({
-        name: item.name,
-        totalCost: item.currentStock * 10,
-        usage:
+        name: item.name || 'Unknown',
+        totalCost: Math.max(0, (item.currentStock || 0) * 10),
+        usage: Math.max(0, 
           this.usageHistory
             .get(item.id)
             ?.slice(0, 7)
-            .reduce((a, b) => a + b, 0) || 0,
+            .reduce((a, b) => a + (b || 0), 0) || 0
+        ),
       }))
       .sort((a, b) => b.totalCost - a.totalCost)
       .slice(0, 5);
@@ -360,12 +368,12 @@ export class ForecastingEngine {
       string,
       { items: number; totalValue: number }
     >();
-    items.forEach((item) => {
+    validItems.forEach((item) => {
       const category = "General";
       const existing = categoryMap.get(category) || { items: 0, totalValue: 0 };
       categoryMap.set(category, {
         items: existing.items + 1,
-        totalValue: existing.totalValue + item.currentStock * 10,
+        totalValue: existing.totalValue + Math.max(0, (item.currentStock || 0) * 10),
       });
     });
 
@@ -374,7 +382,7 @@ export class ForecastingEngine {
         category,
         items: data.items,
         totalValue: data.totalValue,
-        percentage: (data.totalValue / totalSpend) * 100,
+        percentage: totalSpend > 0 ? (data.totalValue / totalSpend) * 100 : 0,
       })
     );
 
@@ -385,21 +393,21 @@ export class ForecastingEngine {
       const categories: Record<string, number> = {};
       let totalUsage = 0;
 
-      items.forEach((item) => {
-        const usage = this.usageHistory.get(item.id)?.[29 - i] || 0;
+      validItems.forEach((item) => {
+        const usage = Math.max(0, this.usageHistory.get(item.id)?.[29 - i] || 0);
         totalUsage += usage;
         categories["General"] = (categories["General"] || 0) + usage;
       });
 
       return {
         date: date.toISOString().split("T")[0],
-        totalUsage,
+        totalUsage: Math.max(0, totalUsage),
         categories,
       };
     });
 
     return {
-      totalSpend,
+      totalSpend: Math.max(0, totalSpend),
       monthlySpend,
       topExpensiveItems,
       categoryBreakdown,

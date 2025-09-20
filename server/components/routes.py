@@ -137,6 +137,32 @@ async def set_order_status(order_id: str, payload: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/stock-alerts")
+async def get_stock_alerts():
+    try:
+        items = db.db.get_inventory_items()
+        alerts = []
+        for item in items:
+            if item.currentStock <= 0:
+                alerts.append({
+                    "id": item.id,
+                    "name": item.name,
+                    "status": "out-of-stock",
+                    "currentStock": item.currentStock,
+                    "minStock": item.minStock
+                })
+            elif item.currentStock <= item.minStock:
+                alerts.append({
+                    "id": item.id,
+                    "name": item.name,
+                    "status": "low-stock",
+                    "currentStock": item.currentStock,
+                    "minStock": item.minStock
+                })
+        return {"alerts": alerts}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/process-voice", response_model=ProcessVoiceResponse)
 async def process_voice(request: ProcessVoiceRequest):
     try:
@@ -155,13 +181,10 @@ async def process_voice(request: ProcessVoiceRequest):
         print(f"Command response: {response.message}")
 
         # Step 4: Generate voice response using optimized TTS
-        if response.success:
-            audio_response = tts.tts.get_audio_base64(response.message)
-            print("Voice response generated successfully")
-        else:
-            error_message = "Sorry, I couldn't process that request. Please try again."
-            audio_response = tts.tts.get_audio_base64(error_message)
-            print("Error voice response generated")
+        # Speak the final execution result as it's definitive and user-friendly
+        tts_text = response.message or command.notes or "Sorry, I couldn't process that."
+        audio_response = tts.tts.get_audio_base64(tts_text)
+        print("Voice response generated")
 
         return ProcessVoiceResponse(
             transcript=transcript,
@@ -181,42 +204,44 @@ async def process_voice(request: ProcessVoiceRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 def execute_command(command):
-    items = db.db.get_inventory_items()
-    
+    # usage: deduct from stock and log
     if command.type == "usage" and command.item and command.quantity:
-        item = db.db.find_item_by_name(command.item)
-        if item:
-            if item.currentStock >= command.quantity:
-                db.db.log_usage(item.id, command.quantity, "voice_user")
-                db.db.update_stock(item.id, item.currentStock - command.quantity)
-                return VoiceResponse(
-                    message=f"Logged usage of {command.quantity} {item.unit} of {item.name}. Remaining: {item.currentStock - command.quantity}",
-                    success=True
-                )
-            else:
-                return VoiceResponse(message=f"Insufficient stock of {item.name}", success=False)
-        else:
-            return VoiceResponse(message=f"Item {command.item} not found", success=False)
-    
-    elif command.type == "update" and command.item and command.quantity is not None:
-        item = db.db.find_item_by_name(command.item)
-        if item:
-            db.db.update_stock(item.id, command.quantity)
+        item = db.db.find_best_match_by_name(command.item) or db.db.find_item_by_name(command.item)
+        if not item:
+            return VoiceResponse(message=f"I couldn't find {command.item} in inventory.", success=False)
+        if item.currentStock >= command.quantity:
+            db.db.log_usage(item.id, command.quantity, "voice_user")
+            db.db.update_stock(item.id, item.currentStock - command.quantity)
+            remaining = item.currentStock - command.quantity
             return VoiceResponse(
-                message=f"Updated {item.name} stock to {command.quantity} {item.unit}",
+                message=f"Done. I deducted {command.quantity} {item.unit} of {item.name}. {remaining} left.",
                 success=True
             )
         else:
-            return VoiceResponse(message=f"Item {command.item} not found", success=False)
-    
-    elif command.type == "query" and command.item:
-        item = db.db.find_item_by_name(command.item)
+            return VoiceResponse(message=f"Not enough {item.name} in stock to deduct {command.quantity}.", success=False)
+
+    # update: set stock to specific quantity; create item if missing
+    if command.type == "update" and command.item and command.quantity is not None:
+        item = db.db.find_best_match_by_name(command.item) or db.db.find_item_by_name(command.item)
+        if not item:
+            # create new item with provided quantity
+            created = db.db.create_inventory_item(command.item, command.quantity, unit="units")
+            return VoiceResponse(message=f"Added {created.name} with a stock of {created.currentStock} {created.unit}.", success=True)
+        db.db.update_stock(item.id, command.quantity)
+        return VoiceResponse(
+            message=f"All set. {item.name} is now {command.quantity} {item.unit}.",
+            success=True
+        )
+
+    # query: report stock
+    if command.type == "query" and command.item:
+        item = db.db.find_best_match_by_name(command.item) or db.db.find_item_by_name(command.item)
         if item:
             return VoiceResponse(
-                message=f"{item.name}: {item.currentStock} {item.unit} available",
+                message=f"You have {item.currentStock} {item.unit} of {item.name} available.",
                 success=True
             )
-        else:
-            return VoiceResponse(message=f"Item {command.item} not found", success=False)
-    
-    return VoiceResponse(message="Command not recognized", success=False)
+        return VoiceResponse(message=f"I couldn't find {command.item} in inventory.", success=False)
+
+    # unknown or other
+    return VoiceResponse(message="I didn't catch that. Please try again, like 'Add 20 masks' or 'I used 3 syringes'.", success=False)

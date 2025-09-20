@@ -11,3 +11,7 @@ spacy
 numpy
 scipy
 soundfile
+sentencepiece
+requests
+requests
+protobuf

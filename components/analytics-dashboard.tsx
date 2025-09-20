@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -61,23 +62,26 @@ export function AnalyticsDashboard() {
   const forecastingEngine = getForecastingEngine()
 
   useEffect(() => {
-    const inventoryData = getInventoryItems()
-    setItems(inventoryData)
+    const loadData = async () => {
+      const inventoryData = await getInventoryItems()
+      setItems(inventoryData)
 
-    // Generate forecasts
-    const forecastData = inventoryData.map((item) =>
-      forecastingEngine.generateForecast(
-        item.id,
-        item.name,
-        item.currentStock,
-        item.minThreshold
-      )
-    )
-    setForecasts(forecastData)
+      // Generate forecasts
+      const forecastData = await Promise.all(inventoryData.map((item) =>
+        forecastingEngine.generateForecast(
+          item.id,
+          item.name,
+          item.currentStock,
+          item.minStock
+        )
+      ))
+      setForecasts(forecastData)
 
-    // Generate analytics
-    const analyticsData = forecastingEngine.generateAnalytics(inventoryData)
-    setAnalytics(analyticsData)
+      // Generate analytics
+      const analyticsData = await forecastingEngine.generateAnalytics(inventoryData)
+      setAnalytics(analyticsData)
+    }
+    loadData()
   }, [])
 
   const runSimulation = () => {
@@ -129,7 +133,7 @@ export function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-heading bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              ${analytics.totalSpend.toFixed(2)}
+              ${(analytics.totalSpend || 0).toFixed(2)}
             </div>
             <p className="text-sm text-muted-foreground mt-2 font-medium">
               Current stock value
@@ -167,10 +171,11 @@ export function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-heading bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-              {(
-                (forecasts.reduce((sum, f) => sum + f.confidence, 0) / forecasts.length) *
-                100
-              ).toFixed(0)}
+              {forecasts.length > 0 ? (
+                (forecasts.reduce((sum, f) => sum + f.confidence, 0) / forecasts.length * 100).toFixed(0)
+              ) : (
+                '0'
+              )}
               %
             </div>
             <p className="text-sm text-muted-foreground mt-2 font-medium">
@@ -356,7 +361,7 @@ export function AnalyticsDashboard() {
                     cy="50%"
                     labelLine={false}
                     label={({ category, percentage }: any) =>
-                      `${category} (${percentage.toFixed(1)}%)`
+                      `${category} (${(percentage || 0).toFixed(1)}%)`
                     }
                     outerRadius={100}
                     fill="#8884d8"
@@ -411,7 +416,7 @@ export function AnalyticsDashboard() {
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-xl font-heading bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                      ${item.totalCost.toFixed(2)}
+                      ${(item.totalCost || 0).toFixed(2)}
                     </p>
                   </div>
                 </div>

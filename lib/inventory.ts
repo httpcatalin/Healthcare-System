@@ -6,6 +6,7 @@ export interface InventoryItem {
   status: "in-stock" | "low-stock" | "out-of-stock";
   minStock: number;
   maxStock: number;
+  price?: number;
 }
 
 export interface UsageLog {

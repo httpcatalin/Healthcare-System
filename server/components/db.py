@@ -103,6 +103,50 @@ class Database:
         item = self.inventory.find_one({"name": {"$regex": name, "$options": "i"}})
         return InventoryItem(**item) if item else None
 
+    def find_best_match_by_name(self, name: str, threshold: float = 0.6) -> Optional[InventoryItem]:
+        """Fuzzy find the best matching inventory item by name with substring boost."""
+        from difflib import SequenceMatcher
+        best = None
+        best_score = 0.0
+        target = (name or "").lower().strip()
+        if not target:
+            return None
+        for raw in self.inventory.find({}, {"_id": 0}):
+            candidate = (raw.get("name") or "").lower().strip()
+            if not candidate:
+                continue
+            # Base ratio
+            score = SequenceMatcher(None, target, candidate).ratio()
+            # Substring boost
+            if target in candidate or candidate in target:
+                score = max(score, 0.99)
+            if score > best_score:
+                best_score = score
+                best = raw
+        if best and best_score >= threshold:
+            return InventoryItem(**best)
+        return None
+
+    def create_inventory_item(self, name: str, initial_stock: int = 0, unit: str = "units") -> InventoryItem:
+        from datetime import datetime
+        item_id = str(datetime.now().timestamp())
+        doc = {
+            "id": item_id,
+            "name": name,
+            "currentStock": int(initial_stock) if initial_stock is not None else 0,
+            "unit": unit,
+            "minStock": 0,
+            "maxStock": 1000000,
+            "description": None,
+            "category": None,
+            "location": None,
+            "supplier": None,
+            "lastUpdated": datetime.now(),
+            "price": None,
+        }
+        self.inventory.insert_one(doc)
+        return InventoryItem(**doc)
+
     def get_suppliers(self) -> List[Supplier]:
         return [Supplier(**s) for s in self.suppliers.find()]
 

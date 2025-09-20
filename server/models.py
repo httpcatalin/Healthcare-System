@@ -33,7 +33,6 @@ class VoiceCommand(BaseModel):
     item: Optional[str] = None
     quantity: Optional[int] = None
     notes: Optional[str] = None
-    operation: Optional[str] = None  # add | increase | decrease | set | remove | query
 
 class VoiceResponse(BaseModel):
     message: str
