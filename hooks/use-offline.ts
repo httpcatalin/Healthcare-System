@@ -47,7 +47,7 @@ export function useOffline() {
 
       // Simulate API sync (in real app, this would sync with backend)
       for (const item of queue) {
-        console.log("[v0] Syncing offline change:", item.action, item.data)
+        console.log("Syncing offline change:", item.action, item.data)
         // await syncToServer(item.action, item.data)
       }
 
@@ -57,9 +57,9 @@ export function useOffline() {
       setLastSync(now)
       setPendingChanges(0)
 
-      console.log("[v0] Offline sync completed successfully")
+      console.log("Offline sync completed successfully")
     } catch (error) {
-      console.error("[v0] Sync failed:", error)
+      console.error("Sync failed:", error)
     } finally {
       setSyncing(false)
     }
@@ -69,9 +69,9 @@ export function useOffline() {
     try {
       await offlineStorage.addToSyncQueue(action, data)
       await checkPendingChanges()
-      console.log("[v0] Saved offline change:", action)
+      console.log("Saved offline change:", action)
     } catch (error) {
-      console.error("[v0] Failed to save offline change:", error)
+      console.error(" Failed to save offline change:", error)
     }
   }
 

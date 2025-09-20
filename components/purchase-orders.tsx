@@ -1,13 +1,26 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -16,11 +29,27 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FileText, Plus, Send, Download, CheckCircle, Clock, AlertTriangle, DollarSign, Package } from "lucide-react"
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  FileText,
+  Plus,
+  Send,
+  Download,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  DollarSign,
+  Package,
+} from "lucide-react";
 import {
   getPurchaseOrders,
   getSuppliers,
@@ -32,38 +61,70 @@ import {
   type PurchaseOrder,
   type PurchaseOrderItem,
   type Supplier,
-} from "@/lib/purchase-orders"
-import { getInventoryItems } from "@/lib/inventory"
-import { getForecastingEngine } from "@/lib/forecasting"
-import { useAuth } from "@/hooks/use-auth"
+} from "@/lib/purchase-orders";
+import { getInventoryItems } from "@/lib/inventory";
+import { getForecastingEngine } from "@/lib/forecasting";
+import { useAuth } from "@/hooks/use-auth";
 
 export function PurchaseOrders() {
-  const [orders, setOrders] = useState<PurchaseOrder[]>([])
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
-  const [recommendations, setRecommendations] = useState<PurchaseOrderItem[]>([])
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false)
-  const [selectedSupplier, setSelectedSupplier] = useState("")
-  const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([])
-  const [orderNotes, setOrderNotes] = useState("")
-  const [newItemName, setNewItemName] = useState("")
-  const [newItemQuantity, setNewItemQuantity] = useState("")
-  const [newItemPrice, setNewItemPrice] = useState("")
-  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null)
-  const { auth } = useAuth()
+  const [orders, setOrders] = useState<PurchaseOrder[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [recommendations, setRecommendations] = useState<PurchaseOrderItem[]>(
+    []
+  );
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState("");
+  const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([]);
+  const [orderNotes, setOrderNotes] = useState("");
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemQuantity, setNewItemQuantity] = useState("");
+  const [newItemPrice, setNewItemPrice] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(
+    null
+  );
+  const { auth } = useAuth();
 
   useEffect(() => {
-    setOrders(getPurchaseOrders())
-    setSuppliers(getSuppliers())
+    let mounted = true;
+    const load = async () => {
+      try {
+        const [ordersRes, suppliersRes, inventoryItems] = await Promise.all([
+          getPurchaseOrders(),
+          getSuppliers(),
+          getInventoryItems(),
+        ]);
+        if (!mounted) return;
+        setOrders(Array.isArray(ordersRes) ? ordersRes : []);
+        setSuppliers(Array.isArray(suppliersRes) ? suppliersRes : []);
 
-    // Generate recommendations
-    const inventoryItems = getInventoryItems()
-    const forecastingEngine = getForecastingEngine()
-    const forecasts = inventoryItems.map((item) =>
-      forecastingEngine.generateForecast(item.id, item.name, item.currentStock, item.minThreshold),
-    )
-    const recs = generateOrderRecommendations(inventoryItems, forecasts)
-    setRecommendations(recs)
-  }, [])
+        const forecastingEngine = getForecastingEngine();
+        const forecasts = await Promise.all(
+          (Array.isArray(inventoryItems) ? inventoryItems : []).map((item) =>
+            forecastingEngine.generateForecast(
+              item.id,
+              item.name,
+              item.currentStock,
+              item.minStock
+            )
+          )
+        );
+        const recs = generateOrderRecommendations(
+          Array.isArray(inventoryItems) ? inventoryItems : [],
+          forecasts
+        );
+        setRecommendations(recs);
+      } catch (e) {
+        if (!mounted) return;
+        setOrders([]);
+        setSuppliers([]);
+        setRecommendations([]);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const getStatusBadge = (status: PurchaseOrder["status"]) => {
     const variants = {
@@ -73,7 +134,7 @@ export function PurchaseOrders() {
       sent: "default",
       received: "default",
       cancelled: "destructive",
-    } as const
+    } as const;
 
     const colors = {
       draft: "bg-gray-100 text-gray-800",
@@ -82,26 +143,26 @@ export function PurchaseOrders() {
       sent: "bg-purple-100 text-purple-800",
       received: "bg-green-100 text-green-800",
       cancelled: "bg-red-100 text-red-800",
-    }
+    };
 
-    return <Badge className={colors[status]}>{status.toUpperCase()}</Badge>
-  }
+    return <Badge className={colors[status]}>{status.toUpperCase()}</Badge>;
+  };
 
   const getUrgencyBadge = (urgency: "low" | "medium" | "high") => {
     const colors = {
       low: "bg-green-100 text-green-800",
       medium: "bg-yellow-100 text-yellow-800",
       high: "bg-red-100 text-red-800",
-    }
+    };
 
-    return <Badge className={colors[urgency]}>{urgency.toUpperCase()}</Badge>
-  }
+    return <Badge className={colors[urgency]}>{urgency.toUpperCase()}</Badge>;
+  };
 
   const addItemToOrder = () => {
     if (newItemName && newItemQuantity && newItemPrice) {
-      const quantity = Number.parseInt(newItemQuantity)
-      const unitPrice = Number.parseFloat(newItemPrice)
-      const totalPrice = quantity * unitPrice
+      const quantity = Number.parseInt(newItemQuantity);
+      const unitPrice = Number.parseFloat(newItemPrice);
+      const totalPrice = quantity * unitPrice;
 
       const newItem: PurchaseOrderItem = {
         itemId: Date.now().toString(),
@@ -110,60 +171,76 @@ export function PurchaseOrders() {
         unitPrice,
         totalPrice,
         urgency: "medium",
-      }
+      };
 
-      setOrderItems([...orderItems, newItem])
-      setNewItemName("")
-      setNewItemQuantity("")
-      setNewItemPrice("")
+      setOrderItems([...orderItems, newItem]);
+      setNewItemName("");
+      setNewItemQuantity("");
+      setNewItemPrice("");
     }
-  }
+  };
 
   const removeItemFromOrder = (index: number) => {
-    setOrderItems(orderItems.filter((_, i) => i !== index))
-  }
+    setOrderItems(orderItems.filter((_, i) => i !== index));
+  };
 
-  const createOrder = () => {
+  const createOrder = async () => {
     if (selectedSupplier && orderItems.length > 0 && auth.user) {
-      const newOrder = createPurchaseOrder(orderItems, selectedSupplier, auth.user.name, orderNotes)
-      setOrders(getPurchaseOrders())
-      setIsCreatingOrder(false)
-      setOrderItems([])
-      setOrderNotes("")
-      setSelectedSupplier("")
+      const newOrder = await createPurchaseOrder(
+        orderItems,
+        selectedSupplier,
+        auth.user.name,
+        orderNotes
+      );
+      if (newOrder) {
+        const updated = await getPurchaseOrders();
+        setOrders(updated);
+      }
+      setIsCreatingOrder(false);
+      setOrderItems([]);
+      setOrderNotes("");
+      setSelectedSupplier("");
     }
-  }
+  };
 
-  const approveOrder = (orderId: string) => {
+  const approveOrder = async (orderId: string) => {
     if (auth.user) {
-      updateOrderStatus(orderId, "approved", auth.user.name)
-      setOrders(getPurchaseOrders())
+      const ok = await updateOrderStatus(orderId, "approved", auth.user.name);
+      if (ok) {
+        const updated = await getPurchaseOrders();
+        setOrders(updated);
+      }
     }
-  }
+  };
 
   const sendOrder = async (order: PurchaseOrder) => {
     try {
-      await sendOrderToSupplier(order)
-      setOrders(getPurchaseOrders())
+      const ok = await sendOrderToSupplier(order);
+      if (ok) {
+        const updated = await getPurchaseOrders();
+        setOrders(updated);
+      }
     } catch (error) {
-      console.error("Failed to send order:", error)
+      console.error("Failed to send order:", error);
     }
-  }
+  };
 
   const downloadPDF = (order: PurchaseOrder) => {
-    const pdfUrl = generatePurchaseOrderPDF(order)
-    const link = document.createElement("a")
-    link.href = pdfUrl
-    link.download = `${order.orderNumber}.txt`
-    link.click()
-  }
+    const pdfUrl = generatePurchaseOrderPDF(order);
+    const link = document.createElement("a");
+    link.href = pdfUrl;
+    link.download = `${order.orderNumber}.txt`;
+    link.click();
+  };
 
   const addRecommendationToOrder = (recommendation: PurchaseOrderItem) => {
-    setOrderItems([...orderItems, { ...recommendation }])
-  }
+    setOrderItems([...orderItems, { ...recommendation }]);
+  };
 
-  const totalOrderValue = orders.reduce((sum, order) => sum + order.total, 0)
-  const pendingOrders = orders.filter((order) => order.status === "pending" || order.status === "approved").length
+  const totalOrderValue = orders.reduce((sum, order) => sum + order.total, 0);
+  const pendingOrders = orders.filter(
+    (order) => order.status === "pending" || order.status === "approved"
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -182,11 +259,15 @@ export function PurchaseOrders() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pending Orders
+            </CardTitle>
             <Clock className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-secondary">{pendingOrders}</div>
+            <div className="text-2xl font-bold text-secondary">
+              {pendingOrders}
+            </div>
             <p className="text-xs text-muted-foreground">Awaiting processing</p>
           </CardContent>
         </Card>
@@ -197,18 +278,24 @@ export function PurchaseOrders() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalOrderValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">
+              ${totalOrderValue.toFixed(2)}
+            </div>
             <p className="text-xs text-muted-foreground">All orders value</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recommendations</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Recommendations
+            </CardTitle>
             <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{recommendations.length}</div>
+            <div className="text-2xl font-bold text-destructive">
+              {recommendations.length}
+            </div>
             <p className="text-xs text-muted-foreground">AI suggested orders</p>
           </CardContent>
         </Card>
@@ -219,8 +306,9 @@ export function PurchaseOrders() {
         <Alert className="border-secondary/50 bg-secondary/10">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <strong>AI Recommendations:</strong> {recommendations.length} items are recommended for reordering based on
-            current stock levels and usage forecasts.
+            <strong>AI Recommendations:</strong> {recommendations.length} items
+            are recommended for reordering based on current stock levels and
+            usage forecasts.
           </AlertDescription>
         </Alert>
       )}
@@ -238,9 +326,14 @@ export function PurchaseOrders() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Purchase Orders</CardTitle>
-                  <CardDescription>Manage and track your purchase orders</CardDescription>
+                  <CardDescription>
+                    Manage and track your purchase orders
+                  </CardDescription>
                 </div>
-                <Dialog open={isCreatingOrder} onOpenChange={setIsCreatingOrder}>
+                <Dialog
+                  open={isCreatingOrder}
+                  onOpenChange={setIsCreatingOrder}
+                >
                   <DialogTrigger asChild>
                     <Button>
                       <Plus className="mr-2 h-4 w-4" />
@@ -251,13 +344,17 @@ export function PurchaseOrders() {
                     <DialogHeader>
                       <DialogTitle>Create Purchase Order</DialogTitle>
                       <DialogDescription>
-                        Add items and select a supplier for your new purchase order.
+                        Add items and select a supplier for your new purchase
+                        order.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
                         <Label htmlFor="supplier">Supplier</Label>
-                        <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
+                        <Select
+                          value={selectedSupplier}
+                          onValueChange={setSelectedSupplier}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select supplier" />
                           </SelectTrigger>
@@ -326,10 +423,20 @@ export function PurchaseOrders() {
                                   <TableRow key={index}>
                                     <TableCell>{item.itemName}</TableCell>
                                     <TableCell>{item.quantity}</TableCell>
-                                    <TableCell>${item.unitPrice.toFixed(2)}</TableCell>
-                                    <TableCell>${item.totalPrice.toFixed(2)}</TableCell>
                                     <TableCell>
-                                      <Button variant="outline" size="sm" onClick={() => removeItemFromOrder(index)}>
+                                      ${item.unitPrice.toFixed(2)}
+                                    </TableCell>
+                                    <TableCell>
+                                      ${item.totalPrice.toFixed(2)}
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          removeItemFromOrder(index)
+                                        }
+                                      >
                                         Remove
                                       </Button>
                                     </TableCell>
@@ -340,7 +447,10 @@ export function PurchaseOrders() {
                           </div>
                           <div className="mt-2 text-right">
                             <p className="font-medium">
-                              Total: ${orderItems.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2)}
+                              Total: $
+                              {orderItems
+                                .reduce((sum, item) => sum + item.totalPrice, 0)
+                                .toFixed(2)}
                             </p>
                           </div>
                         </div>
@@ -357,7 +467,10 @@ export function PurchaseOrders() {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button onClick={createOrder} disabled={!selectedSupplier || orderItems.length === 0}>
+                      <Button
+                        onClick={createOrder}
+                        disabled={!selectedSupplier || orderItems.length === 0}
+                      >
                         Create Order
                       </Button>
                     </DialogFooter>
@@ -382,24 +495,43 @@ export function PurchaseOrders() {
                   <TableBody>
                     {orders.map((order) => (
                       <TableRow key={order.id}>
-                        <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                        <TableCell className="font-medium">
+                          {order.orderNumber}
+                        </TableCell>
                         <TableCell>{order.supplierName}</TableCell>
                         <TableCell>{getStatusBadge(order.status)}</TableCell>
                         <TableCell>${order.total.toFixed(2)}</TableCell>
-                        <TableCell>{order.createdAt.toLocaleDateString()}</TableCell>
-                        <TableCell>{order.expectedDelivery.toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {order.createdAt.toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {order.expectedDelivery.toLocaleDateString()}
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => downloadPDF(order)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => downloadPDF(order)}
+                            >
                               <Download className="h-3 w-3" />
                             </Button>
-                            {order.status === "pending" && auth.user?.role === "admin" && (
-                              <Button variant="outline" size="sm" onClick={() => approveOrder(order.id)}>
-                                <CheckCircle className="h-3 w-3" />
-                              </Button>
-                            )}
+                            {order.status === "pending" &&
+                              auth.user?.role === "admin" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => approveOrder(order.id)}
+                                >
+                                  <CheckCircle className="h-3 w-3" />
+                                </Button>
+                              )}
                             {order.status === "approved" && (
-                              <Button variant="outline" size="sm" onClick={() => sendOrder(order)}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => sendOrder(order)}
+                              >
                                 <Send className="h-3 w-3" />
                               </Button>
                             )}
@@ -419,14 +551,17 @@ export function PurchaseOrders() {
             <CardHeader>
               <CardTitle>AI Order Recommendations</CardTitle>
               <CardDescription>
-                Items recommended for reordering based on current stock and usage patterns
+                Items recommended for reordering based on current stock and
+                usage patterns
               </CardDescription>
             </CardHeader>
             <CardContent>
               {recommendations.length === 0 ? (
                 <div className="text-center py-8">
                   <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No recommendations at this time</p>
+                  <p className="text-muted-foreground">
+                    No recommendations at this time
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -448,7 +583,9 @@ export function PurchaseOrders() {
                       </div>
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
-                          <span className="font-medium">Recommended Quantity:</span>
+                          <span className="font-medium">
+                            Recommended Quantity:
+                          </span>
                           <div>{rec.quantity} units</div>
                         </div>
                         <div>
@@ -472,7 +609,9 @@ export function PurchaseOrders() {
           <Card>
             <CardHeader>
               <CardTitle>Suppliers</CardTitle>
-              <CardDescription>Manage your supplier information and contacts</CardDescription>
+              <CardDescription>
+                Manage your supplier information and contacts
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -506,5 +645,5 @@ export function PurchaseOrders() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useState, useEffect } from 'react'
 import {
@@ -37,23 +37,45 @@ import { getPurchaseOrders } from '@/lib/purchase-orders'
 import { getForecastingEngine } from '@/lib/forecasting'
 
 export function AdminDashboard() {
-  const [inventoryItems, setInventoryItems] = useState<any[]>([])
-  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([])
-  const [analytics, setAnalytics] = useState<any>(null)
-  const [alerts, setAlerts] = useState<any[]>([])
+  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [alerts, setAlerts] = useState<any[]>([]);
 
   useEffect(() => {
-    const items = getInventoryItems()
-    const orders = getPurchaseOrders()
-    const stockAlerts = getStockAlerts()
-    const forecastingEngine = getForecastingEngine()
-    const analyticsData = forecastingEngine.generateAnalytics(items)
+    let mounted = true;
+    const load = async () => {
+      try {
+        const [items, orders, stockAlerts] = await Promise.all([
+          getInventoryItems(),
+          getPurchaseOrders(),
+          getStockAlerts(),
+        ]);
 
-    setInventoryItems(items)
-    setPurchaseOrders(orders)
-    setAlerts(stockAlerts)
-    setAnalytics(analyticsData)
-  }, [])
+        if (!mounted) return;
+        setInventoryItems(Array.isArray(items) ? items : []);
+        setPurchaseOrders(Array.isArray(orders) ? orders : []);
+        setAlerts(Array.isArray(stockAlerts) ? stockAlerts : []);
+
+        const forecastingEngine = getForecastingEngine();
+        const analyticsData = await forecastingEngine.generateAnalytics(
+          Array.isArray(items) ? items : []
+        );
+        if (!mounted) return;
+        setAnalytics(analyticsData);
+      } catch (e) {
+        if (!mounted) return;
+        setInventoryItems([]);
+        setPurchaseOrders([]);
+        setAlerts([]);
+        setAnalytics(null);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const totalInventoryValue = inventoryItems.reduce(
     (sum, item) => sum + item.currentStock * item.costPerUnit,
@@ -228,7 +250,9 @@ export function AdminDashboard() {
               <Users className="h-5 w-5" />
               User Management
             </CardTitle>
-            <CardDescription>Manage staff access and permissions</CardDescription>
+            <CardDescription>
+              Manage staff access and permissions
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -298,7 +322,9 @@ export function AdminDashboard() {
               <Activity className="h-5 w-5" />
               System Performance
             </CardTitle>
-            <CardDescription>System health and performance metrics</CardDescription>
+            <CardDescription>
+              System health and performance metrics
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -326,5 +352,5 @@ export function AdminDashboard() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

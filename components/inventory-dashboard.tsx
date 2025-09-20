@@ -1,12 +1,25 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -15,93 +28,100 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Package, AlertTriangle, Plus, Minus, Search, TrendingDown, TrendingUp, Clock, WifiOff } from "lucide-react"
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Package,
+  AlertTriangle,
+  Plus,
+  Minus,
+  Search,
+  TrendingDown,
+  TrendingUp,
+  Clock,
+  WifiOff,
+} from "lucide-react";
 import {
   getInventoryItems,
   getStockAlerts,
-  getCategorySummary,
   updateStock,
   logUsage,
   type InventoryItem,
-} from "@/lib/inventory"
-import { useAuth } from "@/hooks/use-auth"
-import { useOffline } from "@/hooks/use-offline"
-import { offlineStorage } from "@/lib/offline-storage"
+} from "@/lib/inventory";
+import { useAuth } from "@/hooks/use-auth";
+import { useOffline } from "@/hooks/use-offline";
+import { offlineStorage } from "@/lib/offline-storage";
 
 export function InventoryDashboard() {
-  const [items, setItems] = useState<InventoryItem[]>([])
-  const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
-  const [stockAdjustment, setStockAdjustment] = useState("")
-  const [usageQuantity, setUsageQuantity] = useState("")
-  const [usageNotes, setUsageNotes] = useState("")
-  const { auth } = useAuth()
-  const { online, saveOfflineChange } = useOffline()
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [stockAdjustment, setStockAdjustment] = useState("");
+  const [usageQuantity, setUsageQuantity] = useState("");
+  const [usageNotes, setUsageNotes] = useState("");
+  const [alerts, setAlerts] = useState<InventoryItem[]>([]);
+
+  const { auth } = useAuth();
+  const { online, saveOfflineChange } = useOffline();
 
   useEffect(() => {
     const loadInventoryData = async () => {
       try {
-        let inventoryData: InventoryItem[]
+        let inventoryData: InventoryItem[];
 
         if (online) {
-          // Load from API when online
-          inventoryData = getInventoryItems()
-          // Save to offline storage
-          await offlineStorage.saveInventory(inventoryData)
+          inventoryData = await getInventoryItems();
+          await offlineStorage.saveInventory(inventoryData);
         } else {
-          // Load from offline storage when offline
-          inventoryData = await offlineStorage.getInventory()
+          inventoryData = await offlineStorage.getInventory();
           if (inventoryData.length === 0) {
-            // Fallback to mock data if no offline data
-            inventoryData = getInventoryItems()
+            inventoryData = await getInventoryItems();
           }
         }
 
-        setItems(inventoryData)
-        setFilteredItems(inventoryData)
-      } catch (error) {
-        console.error("[v0] Failed to load inventory data:", error)
-        // Fallback to mock data
-        const inventoryData = getInventoryItems()
-        setItems(inventoryData)
-        setFilteredItems(inventoryData)
-      }
-    }
+        setItems(inventoryData);
+        setFilteredItems(inventoryData);
 
-    loadInventoryData()
-  }, [online])
+        const alertsData = await getStockAlerts();
+        setAlerts(alertsData);
+      } catch (error) {
+        console.error("[v0] Failed to load inventory data:", error);
+        const inventoryData = await getInventoryItems();
+        setItems(inventoryData);
+        setFilteredItems(inventoryData);
+        setAlerts([]);
+      }
+    };
+
+    loadInventoryData();
+  }, [online]);
 
   useEffect(() => {
-    let filtered = items
+    let filtered = items;
 
     if (searchTerm) {
       filtered = filtered.filter(
         (item) =>
           item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.category.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-    }
-
-    if (categoryFilter !== "all") {
-      filtered = filtered.filter((item) => item.category === categoryFilter)
+          item.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
     if (statusFilter !== "all") {
-      filtered = filtered.filter((item) => item.status === statusFilter)
+      filtered = filtered.filter((item) => item.status === statusFilter);
     }
 
-    setFilteredItems(filtered)
-  }, [items, searchTerm, categoryFilter, statusFilter])
-
-  const alerts = getStockAlerts()
-  const categorySummary = getCategorySummary()
-  const categories = Array.from(new Set(items.map((item) => item.category)))
+    setFilteredItems(filtered);
+  }, [items, searchTerm, statusFilter]);
 
   const getStatusBadge = (status: InventoryItem["status"]) => {
     const variants = {
@@ -109,52 +129,58 @@ export function InventoryDashboard() {
       "low-stock": "secondary",
       "out-of-stock": "destructive",
       expired: "destructive",
-    } as const
+    } as const;
 
     const labels = {
       "in-stock": "In Stock",
       "low-stock": "Low Stock",
       "out-of-stock": "Out of Stock",
       expired: "Expired",
-    }
+    };
 
-    return <Badge variant={variants[status]}>{labels[status]}</Badge>
-  }
+    return <Badge variant={variants[status]}>{labels[status]}</Badge>;
+  };
 
   const handleStockUpdate = async () => {
     if (selectedItem && stockAdjustment) {
-      const newStock = Number.parseInt(stockAdjustment)
+      const newStock = Number.parseInt(stockAdjustment);
 
       if (online) {
-        updateStock(selectedItem.id, newStock)
+        updateStock(selectedItem.id, newStock);
       } else {
         // Save change for offline sync
         await saveOfflineChange("updateStock", {
           itemId: selectedItem.id,
           newStock,
           timestamp: Date.now(),
-        })
+        });
       }
 
       // Update local state immediately
       const updatedItems = items.map((item) =>
         item.id === selectedItem.id
-          ? { ...item, currentStock: newStock, status: newStock <= item.minThreshold ? "low-stock" : "in-stock" }
-          : item,
-      )
-      setItems(updatedItems)
+          ? {
+              ...item,
+              currentStock: newStock,
+              status: (newStock <= item.minStock
+                ? "low-stock"
+                : "in-stock") as InventoryItem["status"],
+            }
+          : item
+      );
+      setItems(updatedItems);
 
-      setStockAdjustment("")
-      setSelectedItem(null)
+      setStockAdjustment("");
+      setSelectedItem(null);
     }
-  }
+  };
 
   const handleUsageLog = async () => {
     if (selectedItem && usageQuantity && auth.user) {
-      const quantity = Number.parseInt(usageQuantity)
+      const quantity = Number.parseInt(usageQuantity);
 
       if (online) {
-        logUsage(selectedItem.id, quantity, auth.user.name, usageNotes)
+        logUsage(selectedItem.id, quantity, auth.user.name, usageNotes);
       } else {
         // Save change for offline sync
         await saveOfflineChange("logUsage", {
@@ -163,29 +189,36 @@ export function InventoryDashboard() {
           userName: auth.user.name,
           notes: usageNotes,
           timestamp: Date.now(),
-        })
+        });
       }
 
       // Update local state immediately
-      const newStock = selectedItem.currentStock - quantity
+      const newStock = selectedItem.currentStock - quantity;
       const updatedItems = items.map((item) =>
         item.id === selectedItem.id
           ? {
               ...item,
               currentStock: Math.max(0, newStock),
-              status: newStock <= 0 ? "out-of-stock" : newStock <= item.minThreshold ? "low-stock" : "in-stock",
+              status: (newStock <= 0
+                ? "out-of-stock"
+                : newStock <= item.minStock
+                ? "low-stock"
+                : "in-stock") as InventoryItem["status"],
             }
-          : item,
-      )
-      setItems(updatedItems)
+          : item
+      );
+      setItems(updatedItems);
 
-      setUsageQuantity("")
-      setUsageNotes("")
-      setSelectedItem(null)
+      setUsageQuantity("");
+      setUsageNotes("");
+      setSelectedItem(null);
     }
-  }
+  };
 
-  const totalValue = items.reduce((sum, item) => sum + item.currentStock * item.costPerUnit, 0)
+  const totalValue = items.reduce(
+    (sum, item) => sum + item.currentStock * 10,
+    0
+  );
 
   return (
     <div className="space-y-6">
@@ -193,7 +226,8 @@ export function InventoryDashboard() {
         <Alert className="border-accent/50 bg-accent/10">
           <WifiOff className="h-4 w-4" />
           <AlertDescription>
-            <strong>Offline Mode:</strong> Changes will be saved locally and synced when connection is restored.
+            <strong>Offline Mode:</strong> Changes will be saved locally and
+            synced when connection is restored.
           </AlertDescription>
         </Alert>
       )}
@@ -203,7 +237,8 @@ export function InventoryDashboard() {
         <Alert className="border-destructive/50 bg-destructive/10">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <strong>{alerts.length} items</strong> require attention: {alerts.length} low/out of stock
+            <strong>{alerts.length} items</strong> require attention:{" "}
+            {alerts.length} low/out of stock
           </AlertDescription>
         </Alert>
       )}
@@ -217,20 +252,24 @@ export function InventoryDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{items.length}</div>
-            <p className="text-xs text-muted-foreground">Across {categories.length} categories</p>
+            <p className="text-xs text-muted-foreground">In inventory</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Low Stock Alerts
+            </CardTitle>
             <TrendingDown className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-secondary">
               {alerts.filter((item) => item.status === "low-stock").length}
             </div>
-            <p className="text-xs text-muted-foreground">Items below threshold</p>
+            <p className="text-xs text-muted-foreground">
+              Items below threshold
+            </p>
           </CardContent>
         </Card>
 
@@ -243,7 +282,9 @@ export function InventoryDashboard() {
             <div className="text-2xl font-bold text-destructive">
               {alerts.filter((item) => item.status === "out-of-stock").length}
             </div>
-            <p className="text-xs text-muted-foreground">Items need reordering</p>
+            <p className="text-xs text-muted-foreground">
+              Items need reordering
+            </p>
           </CardContent>
         </Card>
 
@@ -254,7 +295,9 @@ export function InventoryDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalValue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Current inventory value</p>
+            <p className="text-xs text-muted-foreground">
+              Current inventory value
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -263,7 +306,9 @@ export function InventoryDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Inventory Management</CardTitle>
-          <CardDescription>Track and manage your medical supplies and equipment</CardDescription>
+          <CardDescription>
+            Track and manage your medical supplies and equipment
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -278,19 +323,6 @@ export function InventoryDashboard() {
                 />
               </div>
             </div>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Status" />
@@ -310,11 +342,8 @@ export function InventoryDashboard() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Item</TableHead>
-                  <TableHead>Category</TableHead>
                   <TableHead>Current Stock</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Last Restocked</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -322,33 +351,33 @@ export function InventoryDashboard() {
                 {filteredItems.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.category}</TableCell>
                     <TableCell>
                       {item.currentStock} {item.unit}
                       <div className="text-xs text-muted-foreground">
-                        Min: {item.minThreshold} {item.unit}
+                        Min: {item.minStock} {item.unit}
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
-                    <TableCell>{item.location}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        {item.lastRestocked.toLocaleDateString()}
-                      </div>
-                    </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedItem(item)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedItem(item)}
+                            >
                               <Plus className="h-3 w-3" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
-                              <DialogTitle>Update Stock - {item.name}</DialogTitle>
-                              <DialogDescription>Adjust the current stock level for this item.</DialogDescription>
+                              <DialogTitle>
+                                Update Stock - {item.name}
+                              </DialogTitle>
+                              <DialogDescription>
+                                Adjust the current stock level for this item.
+                              </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
                               <div>
@@ -358,26 +387,37 @@ export function InventoryDashboard() {
                                   type="number"
                                   placeholder={`Current: ${item.currentStock} ${item.unit}`}
                                   value={stockAdjustment}
-                                  onChange={(e) => setStockAdjustment(e.target.value)}
+                                  onChange={(e) =>
+                                    setStockAdjustment(e.target.value)
+                                  }
                                 />
                               </div>
                             </div>
                             <DialogFooter>
-                              <Button onClick={handleStockUpdate}>Update Stock</Button>
+                              <Button onClick={handleStockUpdate}>
+                                Update Stock
+                              </Button>
                             </DialogFooter>
                           </DialogContent>
                         </Dialog>
 
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedItem(item)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedItem(item)}
+                            >
                               <Minus className="h-3 w-3" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
                               <DialogTitle>Log Usage - {item.name}</DialogTitle>
-                              <DialogDescription>Record usage of this item and update stock levels.</DialogDescription>
+                              <DialogDescription>
+                                Record usage of this item and update stock
+                                levels.
+                              </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
                               <div>
@@ -387,7 +427,9 @@ export function InventoryDashboard() {
                                   type="number"
                                   placeholder={`Available: ${item.currentStock} ${item.unit}`}
                                   value={usageQuantity}
-                                  onChange={(e) => setUsageQuantity(e.target.value)}
+                                  onChange={(e) =>
+                                    setUsageQuantity(e.target.value)
+                                  }
                                 />
                               </div>
                               <div>
@@ -396,12 +438,16 @@ export function InventoryDashboard() {
                                   id="notes"
                                   placeholder="e.g., Patient examination, routine procedure"
                                   value={usageNotes}
-                                  onChange={(e) => setUsageNotes(e.target.value)}
+                                  onChange={(e) =>
+                                    setUsageNotes(e.target.value)
+                                  }
                                 />
                               </div>
                             </div>
                             <DialogFooter>
-                              <Button onClick={handleUsageLog}>Log Usage</Button>
+                              <Button onClick={handleUsageLog}>
+                                Log Usage
+                              </Button>
                             </DialogFooter>
                           </DialogContent>
                         </Dialog>
@@ -415,5 +461,5 @@ export function InventoryDashboard() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

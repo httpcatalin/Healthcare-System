@@ -1,201 +1,103 @@
 export interface InventoryItem {
-  id: string
-  name: string
-  category: string
-  currentStock: number
-  minThreshold: number
-  maxCapacity: number
-  unit: string
-  costPerUnit: number
-  supplier: string
-  lastRestocked: Date
-  expiryDate?: Date
-  location: string
-  status: "in-stock" | "low-stock" | "out-of-stock" | "expired"
+  id: string;
+  name: string;
+  currentStock: number;
+  unit: string;
+  status: "in-stock" | "low-stock" | "out-of-stock";
+  minStock: number;
+  maxStock: number;
 }
 
 export interface UsageLog {
-  id: string
-  itemId: string
-  quantity: number
-  usedBy: string
-  usedAt: Date
+  id: string;
+  itemId: string;
+  quantity: number;
+  user: string;
+  timestamp: string;
+  notes?: string;
+}
+
+const API_BASE = "http://localhost:8000/api";
+
+export const getInventoryItems = async (): Promise<InventoryItem[]> => {
+  try {
+    const response = await fetch(`${API_BASE}/inventory`);
+    if (!response.ok) throw new Error("Failed to fetch inventory");
+    const data = await response.json();
+    return data.items || [];
+  } catch (error) {
+    console.error("Error fetching inventory:", error);
+    return [];
+  }
+};
+
+export const getUsageLogs = async (): Promise<UsageLog[]> => {
+  try {
+    const response = await fetch(`${API_BASE}/usage-logs`);
+    if (!response.ok) throw new Error("Failed to fetch usage logs");
+    const data = await response.json();
+    return data.logs || [];
+  } catch (error) {
+    console.error("Error fetching usage logs:", error);
+    return [];
+  }
+};
+
+export const updateStock = async (
+  itemId: string,
+  newStock: number
+): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE}/inventory/${itemId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentStock: newStock }),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error updating stock:", error);
+    return false;
+  }
+};
+
+export const logUsage = async (
+  itemId: string,
+  quantity: number,
+  user: string,
   notes?: string
-}
-
-// Mock inventory data
-export const mockInventoryItems: InventoryItem[] = [
-  {
-    id: "1",
-    name: "Disposable Gloves",
-    category: "PPE",
-    currentStock: 45,
-    minThreshold: 50,
-    maxCapacity: 500,
-    unit: "boxes",
-    costPerUnit: 12.99,
-    supplier: "MedSupply Co",
-    lastRestocked: new Date("2024-01-15"),
-    location: "Storage Room A",
-    status: "low-stock",
-  },
-  {
-    id: "2",
-    name: "Surgical Masks",
-    category: "PPE",
-    currentStock: 120,
-    minThreshold: 100,
-    maxCapacity: 1000,
-    unit: "boxes",
-    costPerUnit: 8.5,
-    supplier: "HealthCare Plus",
-    lastRestocked: new Date("2024-01-20"),
-    location: "Storage Room A",
-    status: "in-stock",
-  },
-  {
-    id: "3",
-    name: "Syringes (10ml)",
-    category: "Medical Supplies",
-    currentStock: 0,
-    minThreshold: 25,
-    maxCapacity: 200,
-    unit: "packs",
-    costPerUnit: 15.75,
-    supplier: "MedEquip Ltd",
-    lastRestocked: new Date("2024-01-10"),
-    location: "Medical Cabinet B",
-    status: "out-of-stock",
-  },
-  {
-    id: "4",
-    name: "Bandages",
-    category: "Medical Supplies",
-    currentStock: 85,
-    minThreshold: 30,
-    maxCapacity: 150,
-    unit: "rolls",
-    costPerUnit: 3.25,
-    supplier: "WoundCare Inc",
-    lastRestocked: new Date("2024-01-18"),
-    location: "Medical Cabinet A",
-    status: "in-stock",
-  },
-  {
-    id: "5",
-    name: "Thermometers",
-    category: "Equipment",
-    currentStock: 8,
-    minThreshold: 10,
-    maxCapacity: 25,
-    unit: "units",
-    costPerUnit: 45.0,
-    supplier: "TechMed Solutions",
-    lastRestocked: new Date("2024-01-12"),
-    location: "Equipment Room",
-    status: "low-stock",
-  },
-  {
-    id: "6",
-    name: "Antiseptic Solution",
-    category: "Pharmaceuticals",
-    currentStock: 22,
-    minThreshold: 15,
-    maxCapacity: 50,
-    unit: "bottles",
-    costPerUnit: 8.99,
-    supplier: "PharmaCorp",
-    lastRestocked: new Date("2024-01-08"),
-    expiryDate: new Date("2024-12-31"),
-    location: "Pharmacy Cabinet",
-    status: "in-stock",
-  },
-]
-
-export const mockUsageLogs: UsageLog[] = [
-  {
-    id: "1",
-    itemId: "1",
-    quantity: 2,
-    usedBy: "Dr. Sarah Johnson",
-    usedAt: new Date("2024-01-22T10:30:00"),
-    notes: "Patient examination",
-  },
-  {
-    id: "2",
-    itemId: "2",
-    quantity: 5,
-    usedBy: "Nurse Emily Davis",
-    usedAt: new Date("2024-01-22T14:15:00"),
-    notes: "Routine procedures",
-  },
-  {
-    id: "3",
-    itemId: "4",
-    quantity: 3,
-    usedBy: "Dr. Michael Chen",
-    usedAt: new Date("2024-01-22T16:45:00"),
-    notes: "Wound dressing",
-  },
-]
-
-export const getInventoryItems = (): InventoryItem[] => {
-  return mockInventoryItems
-}
-
-export const getUsageLogs = (): UsageLog[] => {
-  return mockUsageLogs
-}
-
-export const updateStock = (itemId: string, newStock: number): void => {
-  const item = mockInventoryItems.find((i) => i.id === itemId)
-  if (item) {
-    item.currentStock = newStock
-    item.status = getStockStatus(newStock, item.minThreshold)
+): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE}/usage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId, quantity, user, notes }),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error logging usage:", error);
+    return false;
   }
-}
+};
 
-export const logUsage = (itemId: string, quantity: number, usedBy: string, notes?: string): void => {
-  const item = mockInventoryItems.find((i) => i.id === itemId)
-  if (item) {
-    item.currentStock = Math.max(0, item.currentStock - quantity)
-    item.status = getStockStatus(item.currentStock, item.minThreshold)
+export const getStockAlerts = async (): Promise<InventoryItem[]> => {
+  const items = await getInventoryItems();
+  return items.filter(
+    (item) => item.status === "low-stock" || item.status === "out-of-stock"
+  );
+};
 
-    const newLog: UsageLog = {
-      id: Date.now().toString(),
-      itemId,
-      quantity,
-      usedBy,
-      usedAt: new Date(),
-      notes,
+export const getCategorySummary = async () => {
+  const items = await getInventoryItems();
+  const categories = items.reduce((acc, item) => {
+    const category = "General";
+    if (!acc[category]) {
+      acc[category] = { total: 0, lowStock: 0, outOfStock: 0 };
     }
-    mockUsageLogs.unshift(newLog)
-  }
-}
+    acc[category].total++;
+    if (item.status === "low-stock") acc[category].lowStock++;
+    if (item.status === "out-of-stock") acc[category].outOfStock++;
+    return acc;
+  }, {} as Record<string, { total: number; lowStock: number; outOfStock: number }>);
 
-const getStockStatus = (currentStock: number, minThreshold: number): InventoryItem["status"] => {
-  if (currentStock === 0) return "out-of-stock"
-  if (currentStock <= minThreshold) return "low-stock"
-  return "in-stock"
-}
-
-export const getStockAlerts = (): InventoryItem[] => {
-  return mockInventoryItems.filter((item) => item.status === "low-stock" || item.status === "out-of-stock")
-}
-
-export const getCategorySummary = () => {
-  const categories = mockInventoryItems.reduce(
-    (acc, item) => {
-      if (!acc[item.category]) {
-        acc[item.category] = { total: 0, lowStock: 0, outOfStock: 0 }
-      }
-      acc[item.category].total++
-      if (item.status === "low-stock") acc[item.category].lowStock++
-      if (item.status === "out-of-stock") acc[item.category].outOfStock++
-      return acc
-    },
-    {} as Record<string, { total: number; lowStock: number; outOfStock: number }>,
-  )
-
-  return categories
-}
+  return categories;
+};
