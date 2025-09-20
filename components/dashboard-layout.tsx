@@ -129,7 +129,8 @@ export function DashboardLayout() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <Sidebar className="border-r border-sidebar-border/50">
-          <SidebarHeader className="border-b border-sidebar-border/30 py-2.5 px-4 bg-[#f1f1f1]">
+          {/* <SidebarHeader className="border-b border-sidebar-border/30 py-2.5 px-4 bg-[#f1f1f1]"> */}
+          <SidebarHeader className="border-b border-sidebar-border/30 py-2.5 px-4 bg-blue-100/5">
             <div className="flex items-center gap-3">
               <div className="relative p-3 bg-[#256ef0] rounded-2xl shadow-premium hover-lift">
                 <Stethoscope className="h-6 w-6 text-white drop-shadow-sm" />
@@ -146,7 +147,8 @@ export function DashboardLayout() {
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="p-3 bg-[#f1f1f1]">
+          {/* <SidebarContent className="p-3 bg-[#f1f1f1]"> */}
+          <SidebarContent className="p-3 bg-blue-100/5">
             <div className="mb-3 bg-white p-3 rounded-md border-neutral-200 border-1">
               <div className="">
                 <div className="flex items-center gap-2 mb-4">
