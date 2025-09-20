@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -43,6 +44,7 @@ export function VoiceAssistant() {
   const [commandHistory, setCommandHistory] = useState<CommandHistory[]>([]);
   const [error, setError] = useState("");
   const [lastResponse, setLastResponse] = useState<VoiceResponse | null>(null);
+  const [textCommand, setTextCommand] = useState("");
   const { auth } = useAuth();
 
   const voiceAssistant = getVoiceAssistant();
@@ -114,6 +116,38 @@ export function VoiceAssistant() {
       };
       setLastResponse(errorResponse);
       await voiceAssistant.speak(errorResponse.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const submitTextCommand = async () => {
+    if (!textCommand.trim()) return;
+    setIsProcessing(true);
+    setError("");
+    try {
+      const result = await voiceAssistant.processText(textCommand, "en");
+      setTranscript(result.transcript);
+      setLastResponse(result.response);
+      setCommandHistory((prev) => [
+        {
+          id: Date.now().toString(),
+          timestamp: new Date(),
+          transcript: result.transcript,
+          command: result.command,
+          response: result.response,
+        },
+        ...prev.slice(0, 9),
+      ]);
+
+      if (result.audio_response) {
+        await voiceAssistant.playBase64Audio(result.audio_response);
+      } else if (result.response?.message) {
+        await voiceAssistant.speak(result.response.message);
+      }
+      setTextCommand("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to process text");
     } finally {
       setIsProcessing(false);
     }
@@ -370,6 +404,43 @@ export function VoiceAssistant() {
                 </AlertDescription>
               </Alert>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Text Command Input */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Text Command
+          </CardTitle>
+          <CardDescription>
+            Prefer typing? Enter the same kind of command here (English or
+            Romanian).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-3 max-w-xl">
+            <Input
+              placeholder="e.g., We used 5 gloves / Câte măști mai sunt?"
+              value={textCommand}
+              onChange={(e) => setTextCommand(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !isProcessing) submitTextCommand();
+              }}
+              disabled={isProcessing}
+            />
+            <Button
+              onClick={submitTextCommand}
+              disabled={isProcessing || !textCommand.trim()}
+            >
+              {isProcessing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Send"
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>

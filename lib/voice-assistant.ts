@@ -15,6 +15,7 @@ export interface ProcessVoiceResponse {
   transcript: string;
   command: VoiceCommand;
   response: VoiceResponse;
+  audio_response?: string | null;
 }
 
 export class VoiceAssistant {
@@ -159,6 +160,21 @@ export class VoiceAssistant {
 
       this.mediaRecorder.stop();
     });
+  }
+
+  async processText(
+    text: string,
+    language: string = "en"
+  ): Promise<ProcessVoiceResponse> {
+    const res = await fetch("http://localhost:8000/api/process-text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, language }),
+    });
+    if (!res.ok) {
+      throw new Error(`Server error: ${res.status}`);
+    }
+    return (await res.json()) as ProcessVoiceResponse;
   }
 
   stopListening() {

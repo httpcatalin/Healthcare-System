@@ -221,6 +221,49 @@ async def process_voice(request: ProcessVoiceRequest):
             audio_response = None
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/process-text", response_model=ProcessVoiceResponse)
+async def process_text(payload: dict):
+    try:
+        text = payload.get("text", "") or ""
+        language = payload.get("language", "en") or "en"
+        if not text.strip():
+            raise HTTPException(status_code=400, detail="text is required")
+
+        # Step 1: Use provided text as transcript
+        transcript = text.strip()
+        print(f"Processing text request: '{transcript}' (lang={language})")
+
+        # Step 2: Structure the command using AI
+        command = ai_structurer.ai_structurer.structure_command(transcript)
+        print(f"Structured command: type={command.type}, item={command.item}, quantity={command.quantity}")
+
+        # Step 3: Execute the command on database
+        response = execute_command(command)
+        print(f"Command response: {response.message}")
+
+        # Step 4: Generate voice response using TTS
+        tts_text = response.message or command.notes or "Sorry, I couldn't process that."
+        audio_response = tts.tts.get_audio_base64(tts_text)
+
+        return ProcessVoiceResponse(
+            transcript=transcript,
+            command=command,
+            response=response,
+            audio_response=audio_response
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error processing text: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        error_message = "Sorry, there was an error processing your request."
+        try:
+            audio_response = tts.tts.get_audio_base64(error_message)
+        except:
+            audio_response = None
+        raise HTTPException(status_code=500, detail=str(e))
+
 def execute_command(command):
     # usage: deduct from stock and log
     if command.type == "usage" and command.item and command.quantity:
