@@ -1,26 +1,26 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+  CardTitle
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  TableRow
+} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -28,17 +28,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DialogTrigger
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  SelectValue
+} from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   FileText,
   Plus,
@@ -48,8 +48,8 @@ import {
   Clock,
   AlertTriangle,
   DollarSign,
-  Package,
-} from "lucide-react";
+  Package
+} from 'lucide-react'
 import {
   getOrdersBootstrap,
   createPurchaseOrder,
@@ -58,87 +58,83 @@ import {
   sendOrderToSupplier,
   type PurchaseOrder,
   type PurchaseOrderItem,
-  type Supplier,
-} from "@/lib/purchase-orders";
-import { useAuth } from "@/hooks/use-auth";
+  type Supplier
+} from '@/lib/purchase-orders'
+import { useAuth } from '@/hooks/use-auth'
 
 export function PurchaseOrders() {
-  const [orders, setOrders] = useState<PurchaseOrder[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [recommendations, setRecommendations] = useState<PurchaseOrderItem[]>(
-    []
-  );
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState("");
-  const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([]);
-  const [orderNotes, setOrderNotes] = useState("");
-  const [newItemName, setNewItemName] = useState("");
-  const [newItemQuantity, setNewItemQuantity] = useState("");
-  const [newItemPrice, setNewItemPrice] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(
-    null
-  );
-  const { auth } = useAuth();
+  const [orders, setOrders] = useState<PurchaseOrder[]>([])
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [recommendations, setRecommendations] = useState<PurchaseOrderItem[]>([])
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false)
+  const [selectedSupplier, setSelectedSupplier] = useState('')
+  const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([])
+  const [orderNotes, setOrderNotes] = useState('')
+  const [newItemName, setNewItemName] = useState('')
+  const [newItemQuantity, setNewItemQuantity] = useState('')
+  const [newItemPrice, setNewItemPrice] = useState('')
+  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null)
+  const { auth } = useAuth()
 
   useEffect(() => {
-    let mounted = true;
+    let mounted = true
     const load = async () => {
       try {
-        const boot = await getOrdersBootstrap();
-        if (!mounted) return;
-        setOrders(boot.orders);
-        setSuppliers(boot.suppliers);
-        setRecommendations(boot.recommendations);
+        const boot = await getOrdersBootstrap()
+        if (!mounted) return
+        setOrders(boot.orders)
+        setSuppliers(boot.suppliers)
+        setRecommendations(boot.recommendations)
       } catch (e) {
-        if (!mounted) return;
-        setOrders([]);
-        setSuppliers([]);
-        setRecommendations([]);
+        if (!mounted) return
+        setOrders([])
+        setSuppliers([])
+        setRecommendations([])
       }
-    };
-    load();
+    }
+    load()
     return () => {
-      mounted = false;
-    };
-  }, []);
+      mounted = false
+    }
+  }, [])
 
-  const getStatusBadge = (status: PurchaseOrder["status"]) => {
+  const getStatusBadge = (status: PurchaseOrder['status']) => {
     const variants = {
-      draft: "secondary",
-      pending: "default",
-      approved: "default",
-      sent: "default",
-      received: "default",
-      cancelled: "destructive",
-    } as const;
+      draft: 'secondary',
+      pending: 'default',
+      approved: 'default',
+      sent: 'default',
+      received: 'default',
+      cancelled: 'destructive'
+    } as const
 
     const colors = {
-      draft: "bg-gray-100 text-gray-800",
-      pending: "bg-yellow-100 text-yellow-800",
-      approved: "bg-blue-100 text-blue-800",
-      sent: "bg-purple-100 text-purple-800",
-      received: "bg-green-100 text-green-800",
-      cancelled: "bg-red-100 text-red-800",
-    };
+      draft: 'bg-gray-100 text-gray-800',
+      pending: 'bg-yellow-100 text-yellow-800',
+      approved: 'bg-blue-100 text-blue-800',
+      sent: 'bg-purple-100 text-purple-800',
+      received: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800'
+    }
 
-    return <Badge className={colors[status]}>{status.toUpperCase()}</Badge>;
-  };
+    return <Badge className={colors[status]}>{status.toUpperCase()}</Badge>
+  }
 
-  const getUrgencyBadge = (urgency: "low" | "medium" | "high") => {
+  const getUrgencyBadge = (urgency: 'low' | 'medium' | 'high') => {
     const colors = {
-      low: "bg-green-100 text-green-800",
-      medium: "bg-yellow-100 text-yellow-800",
-      high: "bg-red-100 text-red-800",
-    };
+      low: 'bg-green-100 text-green-800',
+      medium: 'bg-yellow-100 text-yellow-800',
+      high: 'bg-red-100 text-red-800'
+    }
 
-    return <Badge className={colors[urgency]}>{urgency.toUpperCase()}</Badge>;
-  };
+    return <Badge className={colors[urgency]}>{urgency.toUpperCase()}</Badge>
+  }
 
   const addItemToOrder = () => {
     if (newItemName && newItemQuantity && newItemPrice) {
-      const quantity = Number.parseInt(newItemQuantity);
-      const unitPrice = Number.parseFloat(newItemPrice);
-      const totalPrice = quantity * unitPrice;
+      const quantity = Number.parseInt(newItemQuantity)
+      const unitPrice = Number.parseFloat(newItemPrice)
+      const totalPrice = quantity * unitPrice
 
       const newItem: PurchaseOrderItem = {
         itemId: Date.now().toString(),
@@ -146,19 +142,19 @@ export function PurchaseOrders() {
         quantity,
         unitPrice,
         totalPrice,
-        urgency: "medium",
-      };
+        urgency: 'medium'
+      }
 
-      setOrderItems([...orderItems, newItem]);
-      setNewItemName("");
-      setNewItemQuantity("");
-      setNewItemPrice("");
+      setOrderItems([...orderItems, newItem])
+      setNewItemName('')
+      setNewItemQuantity('')
+      setNewItemPrice('')
     }
-  };
+  }
 
   const removeItemFromOrder = (index: number) => {
-    setOrderItems(orderItems.filter((_, i) => i !== index));
-  };
+    setOrderItems(orderItems.filter((_, i) => i !== index))
+  }
 
   const createOrder = async () => {
     if (selectedSupplier && orderItems.length > 0 && auth.user) {
@@ -167,129 +163,151 @@ export function PurchaseOrders() {
         selectedSupplier,
         auth.user.name,
         orderNotes
-      );
+      )
       if (newOrder) {
-        setOrders((prev) => [newOrder, ...prev]);
+        setOrders((prev) => [newOrder, ...prev])
       }
-      setIsCreatingOrder(false);
-      setOrderItems([]);
-      setOrderNotes("");
-      setSelectedSupplier("");
+      setIsCreatingOrder(false)
+      setOrderItems([])
+      setOrderNotes('')
+      setSelectedSupplier('')
     }
-  };
+  }
 
   const approveOrder = async (orderId: string) => {
     if (auth.user) {
-      const ok = await updateOrderStatus(orderId, "approved", auth.user.name);
+      const ok = await updateOrderStatus(orderId, 'approved', auth.user.name)
       if (ok) {
         setOrders((prev) =>
           prev.map((o) =>
             o.id === orderId
-              ? { ...o, status: "approved", approvedBy: auth.user!.name, approvedAt: new Date() }
+              ? {
+                  ...o,
+                  status: 'approved',
+                  approvedBy: auth.user!.name,
+                  approvedAt: new Date()
+                }
               : o
           )
-        );
+        )
       }
     }
-  };
+  }
 
   const sendOrder = async (order: PurchaseOrder) => {
     try {
-      const ok = await sendOrderToSupplier(order);
+      const ok = await sendOrderToSupplier(order)
       if (ok) {
         setOrders((prev) =>
-          prev.map((o) => (o.id === order.id ? { ...o, status: "sent" } : o))
-        );
+          prev.map((o) => (o.id === order.id ? { ...o, status: 'sent' } : o))
+        )
       }
     } catch (error) {
-      console.error("Failed to send order:", error);
+      console.error('Failed to send order:', error)
     }
-  };
+  }
 
   const downloadPDF = (order: PurchaseOrder) => {
-    const pdfUrl = generatePurchaseOrderPDF(order);
-    const link = document.createElement("a");
-    link.href = pdfUrl;
-    link.download = `${order.orderNumber}.txt`;
-    link.click();
-  };
+    const pdfUrl = generatePurchaseOrderPDF(order)
+    const link = document.createElement('a')
+    link.href = pdfUrl
+    link.download = `${order.orderNumber}.txt`
+    link.click()
+  }
 
   const addRecommendationToOrder = (recommendation: PurchaseOrderItem) => {
-    setOrderItems([...orderItems, { ...recommendation }]);
-  };
+    setOrderItems([...orderItems, { ...recommendation }])
+  }
 
-  const totalOrderValue = orders.reduce((sum, order) => sum + order.total, 0);
+  const totalOrderValue = orders.reduce((sum, order) => sum + order.total, 0)
   const pendingOrders = orders.filter(
-    (order) => order.status === "pending" || order.status === "approved"
-  ).length;
+    (order) => order.status === 'pending' || order.status === 'approved'
+  ).length
 
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+        <Card className="bg-[#f1f1f1] py-4  overflow-hidden flex flex-col justify-between">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="xl:text-xl text-lg font-lg tracking-tight">
+              Total Orders
+            </CardTitle>
+            <FileText className="absolute min-h-40 min-w-40 top-0 2xl:left-[12rem] xl:left-[11vw] md:-right-10 right-0 opacity-30" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{orders.length}</div>
-            <p className="text-xs text-muted-foreground">All time orders</p>
+            <div className="xl:text-4xl text-xl font-bold">{orders.length}</div>
+            <p className="text-xs text-foreground">All time orders</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+        <Card className="bg-violet-600/10 border-violet-600/20 py-4  overflow-hidden flex flex-col justify-between">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="xl:text-xl text-lg font-lg tracking-tight text-violet-400">
               Pending Orders
             </CardTitle>
-            <Clock className="h-4 w-4 text-secondary" />
+            <Clock className="absolute min-h-40 min-w-40 top-0 2xl:left-[12rem] xl:left-[11vw] text-violet-600 md:-right-10 right-0 opacity-30" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-secondary">
+            <div className="xl:text-4xl text-xl font-bold text-violet-400">
               {pendingOrders}
             </div>
-            <p className="text-xs text-muted-foreground">Awaiting processing</p>
+            <p className="text-xs text-foreground">Awaiting processing</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+        <Card className="bg-green-600/10 border-green-600/20 py-4  overflow-hidden flex flex-col justify-between">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="xl:text-xl text-lg font-lg tracking-tight text-green-600">
+              Pending Orders
+            </CardTitle>
+            <DollarSign className="absolute min-h-40 min-w-40 top-0 2xl:left-[12rem] text-green-600 xl:left-[11vw] md:-right-10 right-0 opacity-30" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="xl:text-4xl text-xl font-bold text-green-600">
               ${totalOrderValue.toFixed(2)}
             </div>
-            <p className="text-xs text-muted-foreground">All orders value</p>
+            <p className="text-xs text-foreground">Total Value</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+        <Card className="bg-red-600/10  border-red-600/20 py-4  overflow-hidden flex flex-col justify-between">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+            <CardTitle className="xl:text-xl text-lg font-lg tracking-tight text-red-400">
               Recommendations
             </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
+            <AlertTriangle className="absolute min-h-40 min-w-40 top-0 2xl:left-[12rem] text-red-600 xl:left-[11vw] md:-right-10 right-0 opacity-30" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">
+            <div className="xl:text-4xl text-xl font-bold text-red-400">
               {recommendations.length}
             </div>
-            <p className="text-xs text-muted-foreground">AI suggested orders</p>
+            <p className="text-xs text-foreground">AI suggested orders</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* AI Recommendations Alert */}
       {recommendations.length > 0 && (
-        <Alert className="border-secondary/50 bg-secondary/10">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>AI Recommendations:</strong> {recommendations.length} items
-            are recommended for reordering based on current stock levels and
-            usage forecasts.
+        <Alert className="border-secondary/50 bg-secondary/10 ">
+          <div className="mr-2 flex items-center h-full">
+            <AlertTriangle className="min-h-7 min-w-7 text-green-600" />
+          </div>
+          <AlertDescription className="text-green-600 ml-10 flex justify-between items-center">
+            <div>
+              <strong>AI Recommendations:</strong>
+              <div>
+                {recommendations.length} items are recommended for reordering based on
+                current stock levels and usage forecasts.
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-green-600 text-white hover:bg-green-400 cursor-pointer 
+             ring-inset ring-[0.5px] ring-green-400 border-green-700"
+            >
+              View All Alerts
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -306,15 +324,10 @@ export function PurchaseOrders() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Purchase Orders</CardTitle>
-                  <CardDescription>
-                    Manage and track your purchase orders
-                  </CardDescription>
+                  <CardTitle className="font-bold text-xl">Purchase Orders</CardTitle>
+                  <CardDescription>Manage and track your purchase orders</CardDescription>
                 </div>
-                <Dialog
-                  open={isCreatingOrder}
-                  onOpenChange={setIsCreatingOrder}
-                >
+                <Dialog open={isCreatingOrder} onOpenChange={setIsCreatingOrder}>
                   <DialogTrigger asChild>
                     <Button>
                       <Plus className="mr-2 h-4 w-4" />
@@ -325,8 +338,7 @@ export function PurchaseOrders() {
                     <DialogHeader>
                       <DialogTitle>Create Purchase Order</DialogTitle>
                       <DialogDescription>
-                        Add items and select a supplier for your new purchase
-                        order.
+                        Add items and select a supplier for your new purchase order.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -404,19 +416,13 @@ export function PurchaseOrders() {
                                   <TableRow key={index}>
                                     <TableCell>{item.itemName}</TableCell>
                                     <TableCell>{item.quantity}</TableCell>
-                                    <TableCell>
-                                      ${item.unitPrice.toFixed(2)}
-                                    </TableCell>
-                                    <TableCell>
-                                      ${item.totalPrice.toFixed(2)}
-                                    </TableCell>
+                                    <TableCell>${item.unitPrice.toFixed(2)}</TableCell>
+                                    <TableCell>${item.totalPrice.toFixed(2)}</TableCell>
                                     <TableCell>
                                       <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() =>
-                                          removeItemFromOrder(index)
-                                        }
+                                        onClick={() => removeItemFromOrder(index)}
                                       >
                                         Remove
                                       </Button>
@@ -460,7 +466,7 @@ export function PurchaseOrders() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
+              <div className="rounded-md border bg-white">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -476,15 +482,11 @@ export function PurchaseOrders() {
                   <TableBody>
                     {orders.map((order) => (
                       <TableRow key={order.id}>
-                        <TableCell className="font-medium">
-                          {order.orderNumber}
-                        </TableCell>
+                        <TableCell className="font-medium">{order.orderNumber}</TableCell>
                         <TableCell>{order.supplierName}</TableCell>
                         <TableCell>{getStatusBadge(order.status)}</TableCell>
                         <TableCell>${order.total.toFixed(2)}</TableCell>
-                        <TableCell>
-                          {order.createdAt.toLocaleDateString()}
-                        </TableCell>
+                        <TableCell>{order.createdAt.toLocaleDateString()}</TableCell>
                         <TableCell>
                           {order.expectedDelivery.toLocaleDateString()}
                         </TableCell>
@@ -497,8 +499,8 @@ export function PurchaseOrders() {
                             >
                               <Download className="h-3 w-3" />
                             </Button>
-                            {order.status === "pending" &&
-                              auth.user?.role === "admin" && (
+                            {order.status === 'pending' &&
+                              auth.user?.role === 'admin' && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -507,7 +509,7 @@ export function PurchaseOrders() {
                                   <CheckCircle className="h-3 w-3" />
                                 </Button>
                               )}
-                            {order.status === "approved" && (
+                            {order.status === 'approved' && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -530,24 +532,23 @@ export function PurchaseOrders() {
         <TabsContent value="recommendations" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>AI Order Recommendations</CardTitle>
+              <CardTitle className="font-bold text-xl">
+                AI Order Recommendations
+              </CardTitle>
               <CardDescription>
-                Items recommended for reordering based on current stock and
-                usage patterns
+                Items recommended for reordering based on current stock and usage patterns
               </CardDescription>
             </CardHeader>
             <CardContent>
               {recommendations.length === 0 ? (
                 <div className="text-center py-8">
                   <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    No recommendations at this time
-                  </p>
+                  <p className="text-muted-foreground">No recommendations at this time</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {recommendations.map((rec, index) => (
-                    <div key={index} className="border rounded-lg p-4">
+                    <div key={index} className="border rounded-lg p-4 bg-white">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <h4 className="font-medium">{rec.itemName}</h4>
@@ -558,15 +559,14 @@ export function PurchaseOrders() {
                           size="sm"
                           onClick={() => addRecommendationToOrder(rec)}
                           disabled={isCreatingOrder}
+                          className="hover:bg-blue-500"
                         >
                           Add to Order
                         </Button>
                       </div>
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
-                          <span className="font-medium">
-                            Recommended Quantity:
-                          </span>
+                          <span className="font-medium">Recommended Quantity:</span>
                           <div>{rec.quantity} units</div>
                         </div>
                         <div>
@@ -589,7 +589,7 @@ export function PurchaseOrders() {
         <TabsContent value="suppliers" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Suppliers</CardTitle>
+              <CardTitle className="font-bold text-xl">Suppliers</CardTitle>
               <CardDescription>
                 Manage your supplier information and contacts
               </CardDescription>
@@ -597,9 +597,9 @@ export function PurchaseOrders() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {suppliers.map((supplier) => (
-                  <Card key={supplier.id}>
-                    <CardContent className="pt-4">
-                      <h4 className="font-medium mb-2">{supplier.name}</h4>
+                  <Card key={supplier.id} className="bg-white">
+                    <CardContent>
+                      <h4 className="font-lg mb-2">{supplier.name}</h4>
                       <div className="space-y-1 text-sm text-muted-foreground">
                         <p>{supplier.email}</p>
                         <p>{supplier.phone}</p>
@@ -626,5 +626,5 @@ export function PurchaseOrders() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  )
 }
