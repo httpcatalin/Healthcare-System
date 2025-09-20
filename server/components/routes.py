@@ -181,6 +181,42 @@ async def get_analytics_data():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/orders-bootstrap")
+async def get_orders_bootstrap():
+    try:
+        suppliers = db.db.get_suppliers()
+        orders = db.db.get_purchase_orders()
+        items = db.db.get_inventory_items()
+        logs = db.db.get_usage_logs()
+        forecasts, _analytics = forecasting.compute_forecasts_and_analytics(items, logs)
+        def recommend(items, forecasts):
+            recs = []
+            usage_by_id = {f['itemId']: f for f in forecasts}
+            for it in items:
+                f = usage_by_id.get(it.id)
+                if not f:
+                    continue
+                if f.get('riskLevel') == 'high' or f.get('daysUntilStockout', 999) <= 7:
+                    qty = int(max(0, f.get('recommendedOrderQuantity', 0)))
+                    unit_price = float(getattr(it, 'price', 10.0) or 10.0)
+                    recs.append({
+                        'itemId': it.id,
+                        'itemName': it.name,
+                        'quantity': qty,
+                        'unitPrice': unit_price,
+                        'totalPrice': qty * unit_price,
+                        'urgency': 'high' if f.get('riskLevel') == 'high' else 'medium',
+                    })
+            return recs
+        recommendations = recommend(items, forecasts)
+        return {
+            "suppliers": [s.model_dump() for s in suppliers],
+            "orders": [o.model_dump() for o in orders],
+            "recommendations": recommendations,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/process-voice", response_model=ProcessVoiceResponse)
 async def process_voice(request: ProcessVoiceRequest):
     try:

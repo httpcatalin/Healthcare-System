@@ -2,10 +2,10 @@ from __future__ import annotations
 from typing import List, Dict, Any
 import math
 try:
-	import numpy as np  # type: ignore
+	import numpy as np
 	HAS_NUMPY = True
 except Exception:
-	np = None  # type: ignore
+	np = None
 	HAS_NUMPY = False
 
 
@@ -20,14 +20,11 @@ def _safe_number(x, default=0.0):
 
 
 def _build_daily_usage_series(logs: List[dict], days: int = 30):
-	"""Aggregate usage logs into last N days daily usage per itemId."""
 	from datetime import datetime, timedelta
 	end = datetime.utcnow().date()
 	start = end - timedelta(days=days - 1)
 	dates = [start + timedelta(days=i) for i in range(days)]
 	date_index = {d.isoformat(): i for i, d in enumerate(dates)}
-
-	# Dict of itemId -> array/list
 	series: Dict[str, Any] = {}
 	for log in logs:
 		item_id = log.get("itemId")
@@ -35,15 +32,13 @@ def _build_daily_usage_series(logs: List[dict], days: int = 30):
 		qty = int(log.get("quantity", 0))
 		if not item_id or ts is None:
 			continue
-		# timestamp may already be datetime in DB; ensure date string
 		d = ts.date().isoformat() if hasattr(ts, "date") else str(ts)[:10]
 		if d not in date_index:
-			# Skip logs outside window
 			continue
 		idx = date_index[d]
 		if item_id not in series:
 			if HAS_NUMPY:
-				series[item_id] = (np.zeros(days, dtype=float))  # type: ignore
+				series[item_id] = (np.zeros(days, dtype=float))
 			else:
 				series[item_id] = [0.0] * days
 		if HAS_NUMPY:
@@ -104,7 +99,6 @@ def _linear_trend(x) -> float:
 
 
 def forecast_usage(daily_usage, horizon: int = 30):
-	"""Fast forecast: moving average + linear trend extrapolation with mild weekly ripple."""
 	if HAS_NUMPY:
 		if daily_usage.size == 0:
 			return np.zeros(horizon)
@@ -130,19 +124,12 @@ def forecast_usage(daily_usage, horizon: int = 30):
 
 
 def compute_forecasts_and_analytics(items: List[Any], logs: List[Any]) -> tuple[list[dict], dict]:
-	"""
-	Compute per-item forecasts and overall analytics from items and usage logs.
-	Returns (forecasts, analytics) suitable for the frontend.
-	"""
-	# Build usage time series
 	raw_logs = [l.model_dump() if hasattr(l, "model_dump") else dict(l) for l in logs]
 	usage_map = _build_daily_usage_series(raw_logs, days=30)
-
 	forecasts: list[dict] = []
 	total_spend = 0.0
 	top_items: list[dict] = []
 	category_values: Dict[str, float] = {}
-
 	for item in items:
 		item_id = getattr(item, 'id', None)
 		name = getattr(item, 'name', 'Unknown')
@@ -150,13 +137,10 @@ def compute_forecasts_and_analytics(items: List[Any], logs: List[Any]) -> tuple[
 		min_stock = int(getattr(item, 'minStock', 0) or 0)
 		price = _safe_number(getattr(item, 'price', 10.0) or 10.0, 10.0)
 		category = getattr(item, 'category', None) or 'General'
-
 		total_spend += current_stock * price
 		category_values[category] = category_values.get(category, 0.0) + current_stock * price
-
 		usage = usage_map.get(item_id, (np.zeros(30) if HAS_NUMPY else [0.0] * 30))
 		pred = forecast_usage(usage, horizon=30)
-
 		remaining = current_stock
 		days_until = 30
 		for i, u in enumerate(pred):
@@ -164,7 +148,6 @@ def compute_forecasts_and_analytics(items: List[Any], logs: List[Any]) -> tuple[
 			if remaining <= 0:
 				days_until = i + 1
 				break
-
 		if HAS_NUMPY:
 			avg_daily = float(usage.mean()) if getattr(usage, 'size', 0) > 0 else 0.0
 		else:
@@ -173,17 +156,14 @@ def compute_forecasts_and_analytics(items: List[Any], logs: List[Any]) -> tuple[
 		safety_stock = avg_daily * 3
 		reorder_point = int(round(avg_daily * lead_time + safety_stock))
 		order_qty = int(max(min_stock * 2, avg_daily * 30))
-
 		if days_until <= 3:
 			risk = 'high'
 		elif days_until <= 7:
 			risk = 'medium'
 		else:
 			risk = 'low'
-
 		size_val = (getattr(usage, 'size', None) or len(usage)) if not HAS_NUMPY else usage.size
 		confidence = float(min(0.95, 0.5 + (size_val / 100)))
-
 		predicted_usage = pred.tolist() if HAS_NUMPY else pred
 		forecasts.append({
 			'itemId': item_id,
@@ -196,8 +176,6 @@ def compute_forecasts_and_analytics(items: List[Any], logs: List[Any]) -> tuple[
 			'confidence': confidence,
 			'riskLevel': risk,
 		})
-
-		# For top items use last 7 days usage and value
 		if HAS_NUMPY:
 			recent_usage = int(usage[-7:].sum()) if getattr(usage, 'size', 0) >= 7 else int(usage.sum())
 		else:
@@ -207,17 +185,13 @@ def compute_forecasts_and_analytics(items: List[Any], logs: List[Any]) -> tuple[
 			'totalCost': max(0.0, current_stock * price),
 			'usage': max(0, recent_usage),
 		})
-
 	top_items.sort(key=lambda x: x['totalCost'], reverse=True)
 	top_items = top_items[:5]
-
-	# Monthly spend mock based on total_spend (simple but stable, no NaNs)
 	monthly = []
 	for i in range(12):
 		base = total_spend * 0.8
 		seasonal = (math.sin(((i + 1) * math.pi) / 6.0)) * total_spend * 0.2
 		monthly.append(float(max(0.0, base + seasonal)))
-
 	total_value = float(max(0.0, total_spend))
 	category_breakdown = []
 	for cat, val in category_values.items():
@@ -228,8 +202,6 @@ def compute_forecasts_and_analytics(items: List[Any], logs: List[Any]) -> tuple[
 			'totalValue': float(max(0.0, val)),
 			'percentage': float(max(0.0, perc)),
 		})
-
-	# Usage trends per day
 	from datetime import datetime, timedelta
 	end = datetime.utcnow().date()
 	start = end - timedelta(days=29)
@@ -255,7 +227,6 @@ def compute_forecasts_and_analytics(items: List[Any], logs: List[Any]) -> tuple[
 			'totalUsage': float(max(0.0, total)),
 			'categories': categories,
 		})
-
 	analytics = {
 		'totalSpend': total_value,
 		'monthlySpend': monthly,
@@ -263,6 +234,5 @@ def compute_forecasts_and_analytics(items: List[Any], logs: List[Any]) -> tuple[
 		'categoryBreakdown': category_breakdown,
 		'usageTrends': trends,
 	}
-
 	return forecasts, analytics
 

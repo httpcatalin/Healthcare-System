@@ -37,6 +37,40 @@ export interface PurchaseOrder {
 }
 const API_BASE = "http://localhost:8000/api";
 
+export const getOrdersBootstrap = async (): Promise<{
+  suppliers: Supplier[];
+  orders: PurchaseOrder[];
+  recommendations: PurchaseOrderItem[];
+}> => {
+  try {
+    const res = await fetch(`${API_BASE}/orders-bootstrap`);
+    if (!res.ok) throw new Error("Failed to fetch orders bootstrap");
+    const data = await res.json();
+    return {
+      suppliers: (data.suppliers || []).map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        email: s.email ?? "",
+        phone: s.phone ?? "",
+        address: s.address ?? "",
+        paymentTerms: s.paymentTerms ?? "NET 30",
+        leadTimeDays: s.leadTimeDays ?? 7,
+        minimumOrder: s.minimumOrder ?? 0,
+      })),
+      orders: (data.orders || []).map((o: any) => ({
+        ...o,
+        createdAt: new Date(o.createdAt),
+        expectedDelivery: new Date(o.expectedDelivery),
+        approvedAt: o.approvedAt ? new Date(o.approvedAt) : undefined,
+      })),
+      recommendations: data.recommendations || [],
+    };
+  } catch (e) {
+    console.error("getOrdersBootstrap error", e);
+    return { suppliers: [], orders: [], recommendations: [] };
+  }
+};
+
 export const getSuppliers = async (): Promise<Supplier[]> => {
   try {
     const res = await fetch(`${API_BASE}/suppliers`);

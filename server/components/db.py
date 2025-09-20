@@ -148,7 +148,23 @@ class Database:
         return InventoryItem(**doc)
 
     def get_suppliers(self) -> List[Supplier]:
-        return [Supplier(**s) for s in self.suppliers.find()]
+        out: List[Supplier] = []
+        for raw in self.suppliers.find():
+            try:
+                sup_doc = {
+                    "id": str(raw.get("id") or raw.get("_id")),
+                    "name": raw.get("name") or "Unknown Supplier",
+                    "email": raw.get("email") or raw.get("contact") or "unknown@example.com",
+                    "phone": raw.get("phone") or "",
+                    "address": raw.get("address") or "",
+                    "paymentTerms": raw.get("paymentTerms") or "NET 30",
+                    "leadTimeDays": int(raw.get("leadTimeDays") or 7),
+                    "minimumOrder": float(raw.get("minimumOrder") or 0.0),
+                }
+                out.append(Supplier(**sup_doc))
+            except Exception as e:
+                print(f"Skipping supplier due to error: {e} | raw={raw}")
+        return out
 
     def get_purchase_orders(self) -> List[PurchaseOrder]:
         return [PurchaseOrder(**o) for o in self.purchase_orders.find().sort("createdAt", -1)]

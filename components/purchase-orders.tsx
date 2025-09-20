@@ -51,19 +51,15 @@ import {
   Package,
 } from "lucide-react";
 import {
-  getPurchaseOrders,
-  getSuppliers,
+  getOrdersBootstrap,
   createPurchaseOrder,
   updateOrderStatus,
-  generateOrderRecommendations,
   generatePurchaseOrderPDF,
   sendOrderToSupplier,
   type PurchaseOrder,
   type PurchaseOrderItem,
   type Supplier,
 } from "@/lib/purchase-orders";
-import { getInventoryItems } from "@/lib/inventory";
-import { getForecastingEngine } from "@/lib/forecasting";
 import { useAuth } from "@/hooks/use-auth";
 
 export function PurchaseOrders() {
@@ -88,31 +84,11 @@ export function PurchaseOrders() {
     let mounted = true;
     const load = async () => {
       try {
-        const [ordersRes, suppliersRes, inventoryItems] = await Promise.all([
-          getPurchaseOrders(),
-          getSuppliers(),
-          getInventoryItems(),
-        ]);
+        const boot = await getOrdersBootstrap();
         if (!mounted) return;
-        setOrders(Array.isArray(ordersRes) ? ordersRes : []);
-        setSuppliers(Array.isArray(suppliersRes) ? suppliersRes : []);
-
-        const forecastingEngine = getForecastingEngine();
-        const forecasts = await Promise.all(
-          (Array.isArray(inventoryItems) ? inventoryItems : []).map((item) =>
-            forecastingEngine.generateForecast(
-              item.id,
-              item.name,
-              item.currentStock,
-              item.minStock
-            )
-          )
-        );
-        const recs = generateOrderRecommendations(
-          Array.isArray(inventoryItems) ? inventoryItems : [],
-          forecasts
-        );
-        setRecommendations(recs);
+        setOrders(boot.orders);
+        setSuppliers(boot.suppliers);
+        setRecommendations(boot.recommendations);
       } catch (e) {
         if (!mounted) return;
         setOrders([]);
@@ -193,8 +169,7 @@ export function PurchaseOrders() {
         orderNotes
       );
       if (newOrder) {
-        const updated = await getPurchaseOrders();
-        setOrders(updated);
+        setOrders((prev) => [newOrder, ...prev]);
       }
       setIsCreatingOrder(false);
       setOrderItems([]);
@@ -207,8 +182,13 @@ export function PurchaseOrders() {
     if (auth.user) {
       const ok = await updateOrderStatus(orderId, "approved", auth.user.name);
       if (ok) {
-        const updated = await getPurchaseOrders();
-        setOrders(updated);
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId
+              ? { ...o, status: "approved", approvedBy: auth.user!.name, approvedAt: new Date() }
+              : o
+          )
+        );
       }
     }
   };
@@ -217,8 +197,9 @@ export function PurchaseOrders() {
     try {
       const ok = await sendOrderToSupplier(order);
       if (ok) {
-        const updated = await getPurchaseOrders();
-        setOrders(updated);
+        setOrders((prev) =>
+          prev.map((o) => (o.id === order.id ? { ...o, status: "sent" } : o))
+        );
       }
     } catch (error) {
       console.error("Failed to send order:", error);
