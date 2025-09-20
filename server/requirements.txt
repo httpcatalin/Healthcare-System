@@ -15,3 +15,4 @@ sentencepiece
 requests
 requests
 protobuf
+pillow

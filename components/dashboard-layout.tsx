@@ -41,6 +41,7 @@ import { InventoryDashboard } from '@/components/inventory-dashboard'
 import { VoiceAssistant } from '@/components/voice-assistant'
 import { AnalyticsDashboard } from '@/components/analytics-dashboard'
 import { PurchaseOrders } from '@/components/purchase-orders'
+import { InvoiceProcessor } from '@/components/invoice-processor'
 import { AdminDashboard } from '@/components/role-dashboards/admin-dashboard'
 import { DoctorDashboard } from '@/components/role-dashboards/doctor-dashboard'
 import { NurseDashboard } from '@/components/role-dashboards/nurse-dashboard'
@@ -63,6 +64,8 @@ export function DashboardLayout() {
         return <AnalyticsDashboard />
       case 'Purchase Orders':
         return <PurchaseOrders />
+      case 'Invoice Processor':
+        return <InvoiceProcessor />
       case 'Dashboard':
         switch (auth.user?.role) {
           case 'admin':
@@ -105,18 +108,20 @@ export function DashboardLayout() {
 
     // Add role-specific navigation items
     if (auth.user?.role === 'admin') {
-      return [
+      const admin = [
         ...baseItems,
         { name: 'Analytics', href: '#analytics', icon: BarChart3, current: false },
         { name: 'Purchase Orders', href: '#orders', icon: FileText, current: false }
         // { name: 'Settings', href: '#settings', icon: Settings, current: false }
       ]
+      return [...admin, { name: 'Invoice Processor', href: '#invoice', icon: FileText, current: false }]
     } else if (auth.user?.role === 'doctor') {
-      return [
+      const doc = [
         ...baseItems,
         { name: 'Analytics', href: '#analytics', icon: BarChart3, current: false },
         { name: 'Purchase Orders', href: '#orders', icon: FileText, current: false }
       ]
+      return [...doc, { name: 'Invoice Processor', href: '#invoice', icon: FileText, current: false }]
     } else {
       // Nurse role - limited access
       return baseItems

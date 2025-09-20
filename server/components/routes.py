@@ -5,6 +5,8 @@ import components.ai_structurer as ai_structurer
 import components.db as db
 import components.tts as tts
 import components.forecasting as forecasting
+import components.invoice_processor as inv
+from fastapi import UploadFile, File, Form
 
 router = APIRouter()
 
@@ -342,3 +344,26 @@ def execute_command(command):
 
     # unknown or other
     return VoiceResponse(message="I didn't catch that. Please try again, like 'Add 20 masks' or 'I used 3 syringes'.", success=False)
+
+
+@router.post("/invoice/extract")
+async def invoice_extract(file: UploadFile = File(...)):
+    try:
+        content = await file.read()
+        text = inv.extract_text(content)
+        items = inv.generate_hardcoded_items()
+        return {"text": text, "items": items}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/invoice/commit")
+async def invoice_commit(payload: dict):
+    try:
+        items = payload.get("items") or []
+        supplier_id = payload.get("supplierId")
+        created_by = payload.get("createdBy")
+        result = inv.commit_items(items, supplier_id, created_by)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
