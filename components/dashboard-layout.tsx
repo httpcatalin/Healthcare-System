@@ -123,15 +123,17 @@ export function DashboardLayout() {
     }
   }
 
+  // #f1f1f1
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-background via-muted/30 to-background">
+      <div className="min-h-screen flex w-full via-muted/30 to-background">
         <Sidebar className="border-r border-sidebar-border/50 glass">
-          <SidebarHeader className="border-b border-sidebar-border/30 py-2.5 px-4">
+          <SidebarHeader className="border-b border-sidebar-border/30 py-2.5 px-4 bg-[#f1f1f1]">
             <div className="flex items-center gap-3">
               <div className="relative p-3 bg-[#256ef0] rounded-2xl shadow-premium hover-lift">
                 <Stethoscope className="h-6 w-6 text-white drop-shadow-sm" />
-                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-2xl"></div>
+                <div className="absolute inset-0  to-transparent rounded-2xl"></div>
               </div>
               <div>
                 <h2 className="text-xl font-bold text-sidebar-foreground font-heading tracking-tight">
@@ -144,7 +146,7 @@ export function DashboardLayout() {
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="p-3">
+          <SidebarContent className="p-3 bg-[#f1f1f1]">
             <div className="mb-3 bg-white p-3 rounded-md border-neutral-200 border-1">
               <div className="">
                 <div className="flex items-center gap-2 mb-4">
@@ -240,7 +242,7 @@ export function DashboardLayout() {
         </Sidebar>
 
         <div className="flex-1 flex flex-col">
-          <header className="border-b border-border/30 glass sticky top-0 z-20 px-8 py-2">
+          <header className="border-b border-border/30 glass sticky top-0 z-20 px-8 py-2 bg-[#f1f1f1]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <SidebarTrigger className="lg:hidden" />
@@ -256,10 +258,10 @@ export function DashboardLayout() {
 
               <div className="flex items-center gap-4">
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                  <DropdownMenuTrigger>
                     <Button
                       variant="ghost"
-                      className="relative h-10 w-10 rounded-full ring-2 ring-transparent hover:ring-primary/30 shadow-sm"
+                      className="relative h-10 w-10 rounded-full ring-2 ring-transparent hover:ring-[#256ef0] shadow-sm"
                     >
                       <Avatar className="h-10 w-10 shadow-lg">
                         <AvatarImage
@@ -275,40 +277,56 @@ export function DashboardLayout() {
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
+
                   <DropdownMenuContent
-                    className="w-72 glass border-border/30 shadow-premium"
+                    className="w-72 glass border-border/30 shadow-premium px-0"
                     align="end"
                   >
                     <DropdownMenuLabel>
-                      <div className="flex flex-col space-y-3 p-2">
-                        <p className="text-lg font-bold font-heading">
-                          {auth.user?.name}
+                      <div className="flex flex-col space-y-3 ">
+                        <p className="text-lg font-heading flex items-center gap-2 tracking-tighter font-semibold">
+                          <Avatar className="h-11 w-11 shadow-lg">
+                            <AvatarImage
+                              src={auth.user?.avatar || '/placeholder.svg'}
+                              alt={auth.user?.name}
+                            />
+                            <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-bold text-lg">
+                              {auth.user?.name
+                                ?.split(' ')
+                                .map((n) => n[0])
+                                .join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <span className="text-md">{auth.user?.name}</span>
+                            <p className="text-sm font-normal">
+                              <Badge className="bg-[#256ef0]">{auth.user?.role}</Badge>
+                            </p>
+                          </div>
                         </p>
-                        <p className="text-sm text-foreground">{auth.user?.email}</p>
-                        <Badge
-                          variant="secondary"
-                          className="w-fit text-xs px-3 py-1 bg-gradient-to-r from-accent/30 to-primary/30 text-foreground font-semibold border border-accent/30"
-                        >
-                          {auth.user?.role}
-                        </Badge>
                       </div>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+
+                    <DropdownMenuSeparator className="opacity-30" />
+
                     {auth.user?.role === 'admin' && (
                       <DropdownMenuItem
                         onClick={() => handleNavigation('Settings')}
-                        className="py-3 hover:bg-accent/10"
+                        className="py-2 hover:bg-[#256ef0] hover:text-white rounded-none opacity-75"
                       >
-                        <Settings className="mr-3 h-5 w-5" />
-                        <span className="font-medium">Settings</span>
+                        <Settings className="mr-1 h-5 w-5 hover:text-white" />
+                        <span className="text-sm">Settings</span>
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuSeparator />
+
                     <DropdownMenuItem
                       onClick={logout}
-                      className="py-3 text-destructive focus:text-destructive hover:bg-destructive/10"
+                      className="py-2 hover:bg-[#256ef0] rounded-none opacity-75 text-red-600 hover:text-white"
                     >
-                      <LogOut className="mr-3 h-5 w-5" />
+                      <LogOut
+                        className="mr-1 h-5 w-5 hover:text-white"
+                        // color="oklch(57.7% 0.245 27.325)"
+                      />
                       <span className="font-medium">Sign out</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
