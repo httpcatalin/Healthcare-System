@@ -245,7 +245,7 @@ export function DashboardLayout() {
           <header className="border-b border-border/30 glass sticky top-0 z-20 px-8 py-2 bg-[#f1f1f1]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <SidebarTrigger className="lg:hidden" />
+                <SidebarTrigger className="lg:hidden hover:bg-blue-500  " />
                 <div className="">
                   <h1 className="md:text-2xl text-xl font-bold text-foreground font-heading text-balance tracking-tight  bg-clip-text">
                     {currentView}
