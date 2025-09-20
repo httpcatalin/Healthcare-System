@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   LineChart,
   Line,
@@ -20,8 +20,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
-} from 'recharts'
+  ResponsiveContainer,
+} from "recharts";
 import {
   Users,
   DollarSign,
@@ -30,11 +30,11 @@ import {
   TrendingUp,
   FileText,
   Activity,
-  Shield
-} from 'lucide-react'
-import { getInventoryItems, getStockAlerts } from '@/lib/inventory'
-import { getPurchaseOrders } from '@/lib/purchase-orders'
-import { getForecastingEngine } from '@/lib/forecasting'
+  Shield,
+} from "lucide-react";
+import { getInventoryItems, getStockAlerts } from "@/lib/inventory";
+import { getPurchaseOrders } from "@/lib/purchase-orders";
+import { getForecastingEngine } from "@/lib/forecasting";
 
 export function AdminDashboard() {
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
@@ -80,24 +80,28 @@ export function AdminDashboard() {
   const totalInventoryValue = inventoryItems.reduce(
     (sum, item) => sum + (item.currentStock || 0) * (item.price || 10),
     0
-  )
+  );
   const pendingOrders = purchaseOrders.filter(
-    (order) => order.status === 'pending' || order.status === 'approved'
-  )
-  const monthlySpend = analytics?.monthlySpend || []
-  const criticalAlerts = alerts.filter((alert) => alert.status === 'out-of-stock').length
-  const lowStockAlerts = alerts.filter((alert) => alert.status === 'low-stock').length
+    (order) => order.status === "pending" || order.status === "approved"
+  );
+  const monthlySpend = analytics?.monthlySpend || [];
+  const criticalAlerts = alerts.filter(
+    (alert) => alert.status === "out-of-stock"
+  ).length;
+  const lowStockAlerts = alerts.filter(
+    (alert) => alert.status === "low-stock"
+  ).length;
 
   // Mock user activity data
   const userActivity = [
-    { name: 'Mon', logins: 12, orders: 3, usage: 45 },
-    { name: 'Tue', logins: 15, orders: 5, usage: 52 },
-    { name: 'Wed', logins: 18, orders: 2, usage: 38 },
-    { name: 'Thu', logins: 14, orders: 7, usage: 61 },
-    { name: 'Fri', logins: 16, orders: 4, usage: 48 },
-    { name: 'Sat', logins: 8, orders: 1, usage: 22 },
-    { name: 'Sun', logins: 6, orders: 0, usage: 15 }
-  ]
+    { name: "Mon", logins: 12, orders: 3, usage: 45 },
+    { name: "Tue", logins: 15, orders: 5, usage: 52 },
+    { name: "Wed", logins: 18, orders: 2, usage: 38 },
+    { name: "Thu", logins: 14, orders: 7, usage: 61 },
+    { name: "Fri", logins: 16, orders: 4, usage: 48 },
+    { name: "Sat", logins: 8, orders: 1, usage: 22 },
+    { name: "Sun", logins: 6, orders: 0, usage: 15 },
+  ];
 
   return (
     <div className="space-y-6">
@@ -132,7 +136,9 @@ export function AdminDashboard() {
             <div className="xl:text-4xl text-xl font-bold text-red-400">
               {criticalAlerts}
             </div>
-            <p className="text-xs text-foreground">{lowStockAlerts} low stock warnings</p>
+            <p className="text-xs text-foreground">
+              {lowStockAlerts} low stock warnings
+            </p>
           </CardContent>
         </Card>
 
@@ -148,7 +154,10 @@ export function AdminDashboard() {
               {pendingOrders.length}
             </div>
             <p className="text-xs text-foreground">
-              ${pendingOrders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}{' '}
+              $
+              {pendingOrders
+                .reduce((sum, order) => sum + order.total, 0)
+                .toFixed(2)}{" "}
               total value
             </p>
           </CardContent>
@@ -162,7 +171,9 @@ export function AdminDashboard() {
             <Shield className="absolute min-h-40 min-w-40 top-0 text-green-600 2xl:left-[12rem] xl:left-[11vw] md:-right-10 right-0 opacity-30" />
           </CardHeader>
           <CardContent>
-            <div className="xl:text-4xl text-xl font-bold text-green-600">98.5%</div>
+            <div className="xl:text-4xl text-xl font-bold text-green-600">
+              98.5%
+            </div>
             <p className="text-xs text-foreground">Uptime this month</p>
           </CardContent>
         </Card>
@@ -178,9 +189,10 @@ export function AdminDashboard() {
             <div>
               <strong>System Alerts:</strong>
               <div>
-                <span className="font-bold">{criticalAlerts}</span> critical items need
-                immediate attention, <span className="font-bold">{lowStockAlerts}</span>{' '}
-                items are running low.
+                <span className="font-bold">{criticalAlerts}</span> critical
+                items need immediate attention,{" "}
+                <span className="font-bold">{lowStockAlerts}</span> items are
+                running low.
               </div>
             </div>
             <Button
@@ -199,24 +211,36 @@ export function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-blue-600/5">
           <CardHeader>
-            <CardTitle className="font-bold text-xl">Monthly Spending Trends</CardTitle>
-            <CardDescription>Inventory spending over the last 12 months</CardDescription>
+            <CardTitle className="font-bold text-xl">
+              Monthly Spending Trends
+            </CardTitle>
+            <CardDescription>
+              Inventory spending over the last 12 months
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart
                 data={monthlySpend.map((spend: any, index: number) => ({
                   month: index + 1,
-                  spend
+                  spend,
                 }))}
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip
-                  formatter={(value: number) => [`$${value.toFixed(2)}`, 'Spending']}
+                  formatter={(value: number) => [
+                    `$${value.toFixed(2)}`,
+                    "Spending",
+                  ]}
                 />
-                <Line type="monotone" dataKey="spend" stroke="#164e63" strokeWidth={2} />
+                <Line
+                  type="monotone"
+                  dataKey="spend"
+                  stroke="#164e63"
+                  strokeWidth={2}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -224,7 +248,9 @@ export function AdminDashboard() {
 
         <Card className="bg-blue-600/5">
           <CardHeader>
-            <CardTitle className="font-bold text-xl">Weekly User Activity</CardTitle>
+            <CardTitle className="font-bold text-xl">
+              Weekly User Activity
+            </CardTitle>
             <CardDescription>System usage and order activity</CardDescription>
           </CardHeader>
           <CardContent>
@@ -296,7 +322,10 @@ export function AdminDashboard() {
               <div className="flex justify-between">
                 <span>In Stock:</span>
                 <Badge className="bg-[#256ef0]" variant="default">
-                  {inventoryItems.filter((item) => item.status === 'in-stock').length}
+                  {
+                    inventoryItems.filter((item) => item.status === "in-stock")
+                      .length
+                  }
                 </Badge>
               </div>
               <div className="flex justify-between">
@@ -330,11 +359,15 @@ export function AdminDashboard() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Uptime:</span>
-                <Badge className="bg-[#256ef0] text-white border-blue-700">98.5%</Badge>
+                <Badge className="bg-[#256ef0] text-white border-blue-700">
+                  98.5%
+                </Badge>
               </div>
               <div className="flex justify-between">
                 <span>Response Time:</span>
-                <Badge className="bg-[#256ef0] text-white border-blue-700">120ms</Badge>
+                <Badge className="bg-[#256ef0] text-white border-blue-700">
+                  120ms
+                </Badge>
               </div>
               <div className="flex justify-between">
                 <span>Active Sessions:</span>
@@ -342,7 +375,9 @@ export function AdminDashboard() {
               </div>
               <div className="flex justify-between">
                 <span>Data Sync:</span>
-                <Badge className="bg-[#256ef0] text-white border-blue-700">Online</Badge>
+                <Badge className="bg-[#256ef0] text-white border-blue-700">
+                  Online
+                </Badge>
               </div>
             </div>
             <Button className="w-full mt-4 bg-transparent" variant="outline">

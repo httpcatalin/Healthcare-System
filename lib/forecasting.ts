@@ -54,6 +54,14 @@ export interface SimulationResult {
   criticalItems: string[];
 }
 
+import type { InventoryItem } from "@/lib/inventory";
+
+export interface AnalyticsBundle {
+  items: InventoryItem[];
+  forecasts: ForecastData[];
+  analytics: AnalyticsData;
+}
+
 class SimpleNeuralNetwork {
   private weights: number[];
   private bias: number;
@@ -330,11 +338,12 @@ export class ForecastingEngine {
 
   async generateAnalytics(items: any[]): Promise<AnalyticsData> {
     // Ensure items have valid numeric values
-    const validItems = items.filter(item => 
-      item && 
-      typeof item.currentStock === 'number' && 
-      !isNaN(item.currentStock) &&
-      item.currentStock >= 0
+    const validItems = items.filter(
+      (item) =>
+        item &&
+        typeof item.currentStock === "number" &&
+        !isNaN(item.currentStock) &&
+        item.currentStock >= 0
     );
 
     const totalSpend = validItems.reduce(
@@ -352,9 +361,10 @@ export class ForecastingEngine {
 
     const topExpensiveItems = validItems
       .map((item) => ({
-        name: item.name || 'Unknown',
+        name: item.name || "Unknown",
         totalCost: Math.max(0, (item.currentStock || 0) * 10),
-        usage: Math.max(0, 
+        usage: Math.max(
+          0,
           this.usageHistory
             .get(item.id)
             ?.slice(0, 7)
@@ -373,7 +383,8 @@ export class ForecastingEngine {
       const existing = categoryMap.get(category) || { items: 0, totalValue: 0 };
       categoryMap.set(category, {
         items: existing.items + 1,
-        totalValue: existing.totalValue + Math.max(0, (item.currentStock || 0) * 10),
+        totalValue:
+          existing.totalValue + Math.max(0, (item.currentStock || 0) * 10),
       });
     });
 
@@ -394,7 +405,10 @@ export class ForecastingEngine {
       let totalUsage = 0;
 
       validItems.forEach((item) => {
-        const usage = Math.max(0, this.usageHistory.get(item.id)?.[29 - i] || 0);
+        const usage = Math.max(
+          0,
+          this.usageHistory.get(item.id)?.[29 - i] || 0
+        );
         totalUsage += usage;
         categories["General"] = (categories["General"] || 0) + usage;
       });
@@ -494,4 +508,16 @@ export const getForecastingEngine = (): ForecastingEngine => {
     forecastingEngine = new ForecastingEngine();
   }
   return forecastingEngine;
+};
+
+export const getAnalyticsBundle = async (): Promise<AnalyticsBundle | null> => {
+  try {
+    const res = await fetch("http://localhost:8000/api/analytics-data");
+    if (!res.ok) throw new Error("Failed to fetch analytics bundle");
+    const data = await res.json();
+    return data as AnalyticsBundle;
+  } catch (err) {
+    console.error("Error fetching analytics bundle:", err);
+    return null;
+  }
 };

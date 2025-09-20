@@ -1,26 +1,25 @@
+"use client";
 
-'use client'
-
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   LineChart,
   Line,
@@ -32,91 +31,114 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
-} from 'recharts'
+  ResponsiveContainer,
+} from "recharts";
 import {
   TrendingUp,
   AlertTriangle,
   DollarSign,
   Activity,
   Target,
-  Zap
-} from 'lucide-react'
-import { getInventoryItems } from '@/lib/inventory'
+  Zap,
+} from "lucide-react";
+import { getInventoryItems } from "@/lib/inventory";
 import {
   getForecastingEngine,
   type ForecastData,
   type AnalyticsData,
-  type SimulationResult
-} from '@/lib/forecasting'
+  type SimulationResult,
+  getAnalyticsBundle,
+} from "@/lib/forecasting";
 
 export function AnalyticsDashboard() {
-  const [items, setItems] = useState<any[]>([])
-  const [forecasts, setForecasts] = useState<ForecastData[]>([])
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
-  const [simulation, setSimulation] = useState<SimulationResult | null>(null)
-  const [simulationScenario, setSimulationScenario] = useState('patient-increase')
-  const [simulationMultiplier, setSimulationMultiplier] = useState('1.2')
-  const [selectedTimeframe, setSelectedTimeframe] = useState('30')
+  const [items, setItems] = useState<any[]>([]);
+  const [forecasts, setForecasts] = useState<ForecastData[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [simulation, setSimulation] = useState<SimulationResult | null>(null);
+  const [simulationScenario, setSimulationScenario] =
+    useState("patient-increase");
+  const [simulationMultiplier, setSimulationMultiplier] = useState("1.2");
+  const [selectedTimeframe, setSelectedTimeframe] = useState("30");
 
-  const forecastingEngine = getForecastingEngine()
+  const forecastingEngine = getForecastingEngine();
 
   useEffect(() => {
     const loadData = async () => {
-      const inventoryData = await getInventoryItems()
-      setItems(inventoryData)
+      // Prefer single server call for performance
+      const bundle = await getAnalyticsBundle();
+      if (bundle) {
+        setItems(bundle.items || []);
+        setForecasts(bundle.forecasts || []);
+        setAnalytics(bundle.analytics || null);
+        return;
+      }
 
-      // Generate forecasts
-      const forecastData = await Promise.all(inventoryData.map((item) =>
-        forecastingEngine.generateForecast(
-          item.id,
-          item.name,
-          item.currentStock,
-          item.minStock
+      // Fallback to legacy client-side path if server not available
+      const inventoryData = await getInventoryItems();
+      setItems(inventoryData);
+      const forecastData = await Promise.all(
+        inventoryData.map((item) =>
+          forecastingEngine.generateForecast(
+            item.id,
+            item.name,
+            item.currentStock,
+            item.minStock
+          )
         )
-      ))
-      setForecasts(forecastData)
+      );
+      setForecasts(forecastData);
+      const analyticsData = await forecastingEngine.generateAnalytics(
+        inventoryData
+      );
+      setAnalytics(analyticsData);
+    };
+    loadData();
+  }, []);
 
-      // Generate analytics
-      const analyticsData = await forecastingEngine.generateAnalytics(inventoryData)
-      setAnalytics(analyticsData)
-    }
-    loadData()
-  }, [])
-
-  const runSimulation = () => {
-    const multiplier = Number.parseFloat(simulationMultiplier)
+  const runSimulation = async () => {
+    const multiplier = Number.parseFloat(simulationMultiplier);
     const scenarioName =
       {
-        'patient-increase': `${((multiplier - 1) * 100).toFixed(
+        "patient-increase": `${((multiplier - 1) * 100).toFixed(
           0
         )}% Patient Load Increase`,
-        'seasonal-surge': 'Seasonal Surge',
-        emergency: 'Emergency Scenario'
-      }[simulationScenario] || 'Custom Scenario'
+        "seasonal-surge": "Seasonal Surge",
+        emergency: "Emergency Scenario",
+      }[simulationScenario] || "Custom Scenario";
 
-    const result = forecastingEngine.runSimulation(items, scenarioName, multiplier)
-    setSimulation(result)
-  }
+    const result = await forecastingEngine.runSimulation(
+      items,
+      scenarioName,
+      multiplier
+    );
+    setSimulation(result);
+  };
 
   const getRiskBadge = (riskLevel: string) => {
     const variants = {
-      low: 'default',
-      medium: 'secondary',
-      high: 'destructive'
-    } as const
+      low: "default",
+      medium: "secondary",
+      high: "destructive",
+    } as const;
 
     return (
       <Badge variant={variants[riskLevel as keyof typeof variants]}>
         {riskLevel.toUpperCase()} RISK
       </Badge>
-    )
-  }
+    );
+  };
 
-  const COLORS = ['#164e63', '#a16207', '#dc2626', '#059669', '#7c3aed', '#ea580c']
+  const COLORS = [
+    "#164e63",
+    "#a16207",
+    "#dc2626",
+    "#059669",
+    "#7c3aed",
+    "#ea580c",
+  ];
 
   if (!analytics) {
-    return <div>Loading analytics...</div>
+    return <div>Loading analytics...</div>;
   }
 
   return (
@@ -152,7 +174,7 @@ export function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-heading text-destructive">
-              {forecasts.filter((f) => f.riskLevel === 'high').length}
+              {forecasts.filter((f) => f.riskLevel === "high").length}
             </div>
             <p className="text-sm text-muted-foreground mt-2 font-medium">
               High risk stockouts
@@ -171,11 +193,13 @@ export function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold font-heading bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-              {forecasts.length > 0 ? (
-                (forecasts.reduce((sum, f) => sum + f.confidence, 0) / forecasts.length * 100).toFixed(0)
-              ) : (
-                '0'
-              )}
+              {forecasts.length > 0
+                ? (
+                    (forecasts.reduce((sum, f) => sum + f.confidence, 0) /
+                      forecasts.length) *
+                    100
+                  ).toFixed(0)
+                : "0"}
               %
             </div>
             <p className="text-sm text-muted-foreground mt-2 font-medium">
@@ -222,14 +246,14 @@ export function AnalyticsDashboard() {
         <CardContent>
           <div className="space-y-6">
             {forecasts
-              .filter((forecast) => forecast.riskLevel !== 'low')
+              .filter((forecast) => forecast.riskLevel !== "low")
               .map((forecast) => (
                 <Alert
                   key={forecast.itemId}
                   className={`glass border-l-4 shadow-sm hover-lift transition-all duration-300 ${
-                    forecast.riskLevel === 'high'
-                      ? 'border-l-destructive border-destructive/30 bg-destructive/5'
-                      : 'border-l-secondary border-secondary/30 bg-secondary/5'
+                    forecast.riskLevel === "high"
+                      ? "border-l-destructive border-destructive/30 bg-destructive/5"
+                      : "border-l-secondary border-secondary/30 bg-secondary/5"
                   }`}
                 >
                   <div className="flex items-start justify-between">
@@ -315,11 +339,11 @@ export function AnalyticsDashboard() {
                 <Tooltip
                   labelFormatter={(date) => new Date(date).toLocaleDateString()}
                   contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1)',
-                    backdropFilter: 'blur(16px)'
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "12px",
+                    boxShadow: "0 10px 25px -3px rgba(0, 0, 0, 0.1)",
+                    backdropFilter: "blur(16px)",
                   }}
                 />
                 <Legend />
@@ -329,12 +353,12 @@ export function AnalyticsDashboard() {
                   stroke="hsl(var(--primary))"
                   strokeWidth={3}
                   name="Total Usage"
-                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                  dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
                   activeDot={{
                     r: 6,
-                    stroke: 'hsl(var(--primary))',
+                    stroke: "hsl(var(--primary))",
                     strokeWidth: 2,
-                    fill: 'hsl(var(--background))'
+                    fill: "hsl(var(--background))",
                   }}
                 />
               </LineChart>
@@ -346,7 +370,9 @@ export function AnalyticsDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="glass border-border/30 shadow-premium">
           <CardHeader className="pb-6">
-            <CardTitle className="text-2xl font-heading">Category Breakdown</CardTitle>
+            <CardTitle className="text-2xl font-heading">
+              Category Breakdown
+            </CardTitle>
             <CardDescription className="text-base text-muted-foreground">
               Inventory value distribution by category
             </CardDescription>
@@ -370,17 +396,23 @@ export function AnalyticsDashboard() {
                     strokeWidth={2}
                   >
                     {analytics.categoryBreakdown.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Value']}
+                    formatter={(value: number) => [
+                      `$${value.toFixed(2)}`,
+                      "Value",
+                    ]}
                     contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1)',
-                      backdropFilter: 'blur(16px)'
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "12px",
+                      boxShadow: "0 10px 25px -3px rgba(0, 0, 0, 0.1)",
+                      backdropFilter: "blur(16px)",
                     }}
                   />
                 </PieChart>
@@ -391,7 +423,9 @@ export function AnalyticsDashboard() {
 
         <Card className="glass border-border/30 shadow-premium">
           <CardHeader className="pb-6">
-            <CardTitle className="text-2xl font-heading">Top Expensive Items</CardTitle>
+            <CardTitle className="text-2xl font-heading">
+              Top Expensive Items
+            </CardTitle>
             <CardDescription className="text-base text-muted-foreground">
               Items with highest inventory value
             </CardDescription>
@@ -408,7 +442,9 @@ export function AnalyticsDashboard() {
                       {index + 1}
                     </div>
                     <div>
-                      <p className="font-bold text-lg font-heading">{item.name}</p>
+                      <p className="font-bold text-lg font-heading">
+                        {item.name}
+                      </p>
                       <p className="text-sm text-muted-foreground font-medium">
                         Weekly usage: {item.usage} units
                       </p>
@@ -441,12 +477,17 @@ export function AnalyticsDashboard() {
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1">
               <Label htmlFor="scenario">Scenario Type</Label>
-              <Select value={simulationScenario} onValueChange={setSimulationScenario}>
+              <Select
+                value={simulationScenario}
+                onValueChange={setSimulationScenario}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="patient-increase">Patient Load Increase</SelectItem>
+                  <SelectItem value="patient-increase">
+                    Patient Load Increase
+                  </SelectItem>
                   <SelectItem value="seasonal-surge">Seasonal Surge</SelectItem>
                   <SelectItem value="emergency">Emergency Scenario</SelectItem>
                 </SelectContent>
@@ -477,8 +518,9 @@ export function AnalyticsDashboard() {
                 <AlertDescription>
                   <strong>Scenario:</strong> {simulation.scenario}
                   <br />
-                  <strong>Critical Items:</strong> {simulation.criticalItems.length} items
-                  need immediate attention
+                  <strong>Critical Items:</strong>{" "}
+                  {simulation.criticalItems.length} items need immediate
+                  attention
                   <br />
                   <strong>Additional Cost:</strong> $
                   {simulation.totalAdditionalCost.toFixed(2)}
@@ -489,7 +531,10 @@ export function AnalyticsDashboard() {
                 {simulation.impactedItems
                   .filter((item) => item.daysUntilStockout <= 14)
                   .map((item) => (
-                    <Card key={item.itemName} className="border-l-4 border-l-destructive">
+                    <Card
+                      key={item.itemName}
+                      className="border-l-4 border-l-destructive"
+                    >
                       <CardContent className="pt-4">
                         <h4 className="font-medium mb-2">{item.itemName}</h4>
                         <div className="space-y-1 text-sm">
@@ -502,8 +547,8 @@ export function AnalyticsDashboard() {
                             <span
                               className={
                                 item.projectedStock <= 0
-                                  ? 'text-destructive font-medium'
-                                  : ''
+                                  ? "text-destructive font-medium"
+                                  : ""
                               }
                             >
                               {item.projectedStock}
@@ -511,7 +556,9 @@ export function AnalyticsDashboard() {
                           </div>
                           <div className="flex justify-between">
                             <span>Days Until Stockout:</span>
-                            <span className="font-medium">{item.daysUntilStockout}</span>
+                            <span className="font-medium">
+                              {item.daysUntilStockout}
+                            </span>
                           </div>
                           {item.additionalOrderNeeded > 0 && (
                             <div className="flex justify-between text-destructive">
@@ -531,5 +578,5 @@ export function AnalyticsDashboard() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

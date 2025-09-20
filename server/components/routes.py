@@ -4,6 +4,7 @@ import components.stt as stt
 import components.ai_structurer as ai_structurer
 import components.db as db
 import components.tts as tts
+import components.forecasting as forecasting
 
 router = APIRouter()
 
@@ -160,6 +161,23 @@ async def get_stock_alerts():
                     "minStock": item.minStock
                 })
         return {"alerts": alerts}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/analytics-data")
+async def get_analytics_data():
+    """Return inventory items, server-side forecasts, and analytics in one call.
+    This reduces client requests and computes forecasts using a fast numpy-based method.
+    """
+    try:
+        items = db.db.get_inventory_items()
+        logs = db.db.get_usage_logs()
+        forecasts, analytics = forecasting.compute_forecasts_and_analytics(items, logs)
+        return {
+            "items": [item.model_dump() for item in items],
+            "forecasts": forecasts,
+            "analytics": analytics,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
