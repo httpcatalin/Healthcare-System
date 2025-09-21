@@ -149,7 +149,7 @@ export function DashboardLayout() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-sidebar-foreground font-heading tracking-tight">
-                  HealthCare RM
+                  HealthFlow
                 </h2>
                 <p className="text-sm text-sidebar-foreground font-medium tracking-wide">
                   Resource Manager
