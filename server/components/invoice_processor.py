@@ -24,11 +24,9 @@ def extract_text(image_bytes: bytes) -> str:
 	try:
 		img = Image.open(BytesIO(image_bytes)).convert("RGB")
 	except Exception:
-		# Try to open as bytes via PIL fallback
 		img = Image.open(BytesIO(image_bytes))
 	ocr = _get_ocr_pipeline()
 	result = ocr(img)
-	# pipeline returns list of { 'generated_text': '...' } or similar
 	if isinstance(result, list) and result:
 		text = result[0].get("generated_text") or result[0].get("text") or ""
 	elif isinstance(result, dict):
@@ -53,7 +51,6 @@ def parse_invoice(text: str) -> List[Dict[str, Any]]:
 		low = line.lower()
 		if any(kw in low for kw in ["subtotal", "total", "tax", "tva", "sum"]):
 			continue
-		# Try patterns: "name qty price" or "name x qty price" or CSV-like
 		m = re.findall(r"([A-Za-z][A-Za-z0-9\-\s]+)", line)
 		nums = re.findall(r"[-+]?[0-9]*\.?[0-9]+", line.replace(',', '.'))
 		if not m:
@@ -64,7 +61,6 @@ def parse_invoice(text: str) -> List[Dict[str, Any]]:
 		if len(nums) == 1:
 			unit_price = _to_number(nums[0])
 		elif len(nums) >= 2:
-			# assume first is quantity, last is unit price
 			quantity = max(1, int(float(nums[0])))
 			unit_price = _to_number(nums[-1])
 		total_price = max(0.0, quantity * unit_price)
@@ -76,7 +72,6 @@ def parse_invoice(text: str) -> List[Dict[str, Any]]:
 				"totalPrice": total_price,
 				"urgency": "medium",
 			})
-	# Deduplicate by itemName merging quantities
 	merged: Dict[str, Dict[str, Any]] = {}
 	for it in items:
 		key = it["itemName"].lower()

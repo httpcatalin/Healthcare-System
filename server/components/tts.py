@@ -23,18 +23,15 @@ class TextToSpeech:
         self._load_model()
 
         inputs = self.tokenizer(text, return_tensors="pt")
-        inputs["input_ids"] = inputs["input_ids"].long()  # Ensure input_ids are long tensors
+        inputs["input_ids"] = inputs["input_ids"].long()
 
         with torch.no_grad():
             output = self.model(**inputs).waveform
 
-        # Convert to numpy array and then to bytes
         audio_array = output.squeeze().numpy()
 
-        # Normalize to 16-bit PCM
         audio_array = (audio_array * 32767).astype(np.int16)
 
-        # Create WAV file in memory
         wav_buffer = io.BytesIO()
         scipy.io.wavfile.write(wav_buffer, rate=self.model.config.sampling_rate, data=audio_array)
         wav_buffer.seek(0)
@@ -45,5 +42,4 @@ class TextToSpeech:
         audio_data = self.speak(text)
         return base64.b64encode(audio_data).decode('utf-8')
 
-# Singleton instance used by API routes
 tts = TextToSpeech()

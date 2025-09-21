@@ -53,7 +53,6 @@ class Database:
     def get_inventory_items(self) -> List[InventoryItem]:
         items = []
         for item_data in self.inventory.find():
-            # Calculate status if not present
             if 'status' not in item_data:
                 current_stock = item_data.get('currentStock', 0)
                 min_stock = item_data.get('minStock', 0)
@@ -70,7 +69,6 @@ class Database:
             except Exception as e:
                 print(f"Error creating InventoryItem from {item_data.get('name', 'unknown')}: {e}")
                 print(f"Item data: {item_data}")
-                # Skip invalid items but continue processing others
                 continue
         return items
 
@@ -104,7 +102,6 @@ class Database:
         return InventoryItem(**item) if item else None
 
     def find_best_match_by_name(self, name: str, threshold: float = 0.6) -> Optional[InventoryItem]:
-        """Fuzzy find the best matching inventory item by name with substring boost."""
         from difflib import SequenceMatcher
         best = None
         best_score = 0.0
@@ -115,9 +112,7 @@ class Database:
             candidate = (raw.get("name") or "").lower().strip()
             if not candidate:
                 continue
-            # Base ratio
             score = SequenceMatcher(None, target, candidate).ratio()
-            # Substring boost
             if target in candidate or candidate in target:
                 score = max(score, 0.99)
             if score > best_score:

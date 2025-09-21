@@ -168,9 +168,6 @@ async def get_stock_alerts():
 
 @router.get("/analytics-data")
 async def get_analytics_data():
-    """Return inventory items, server-side forecasts, and analytics in one call.
-    This reduces client requests and computes forecasts using a fast numpy-based method.
-    """
     try:
         items = db.db.get_inventory_items()
         logs = db.db.get_usage_logs()
@@ -224,20 +221,15 @@ async def process_voice(request: ProcessVoiceRequest):
     try:
         print(f"Processing voice request with language: {request.language}")
 
-        # Step 1: Transcribe audio to text using optimized STT
         transcript = stt.stt.transcribe(request.audio, request.language)
         print(f"Transcription result: '{transcript}'")
 
-        # Step 2: Structure the command using AI
         command = ai_structurer.ai_structurer.structure_command(transcript)
         print(f"Structured command: type={command.type}, item={command.item}, quantity={command.quantity}")
 
-        # Step 3: Execute the command on database
         response = execute_command(command)
         print(f"Command response: {response.message}")
 
-        # Step 4: Generate voice response using optimized TTS
-        # Speak the final execution result as it's definitive and user-friendly
         tts_text = response.message or command.notes or "Sorry, I couldn't process that."
         audio_response = tts.tts.get_audio_base64(tts_text)
         print("Voice response generated")
@@ -267,19 +259,15 @@ async def process_text(payload: dict):
         if not text.strip():
             raise HTTPException(status_code=400, detail="text is required")
 
-        # Step 1: Use provided text as transcript
         transcript = text.strip()
         print(f"Processing text request: '{transcript}' (lang={language})")
 
-        # Step 2: Structure the command using AI
         command = ai_structurer.ai_structurer.structure_command(transcript)
         print(f"Structured command: type={command.type}, item={command.item}, quantity={command.quantity}")
 
-        # Step 3: Execute the command on database
         response = execute_command(command)
         print(f"Command response: {response.message}")
 
-        # Step 4: Generate voice response using TTS
         tts_text = response.message or command.notes or "Sorry, I couldn't process that."
         audio_response = tts.tts.get_audio_base64(tts_text)
 
@@ -303,7 +291,6 @@ async def process_text(payload: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 def execute_command(command):
-    # usage: deduct from stock and log
     if command.type == "usage" and command.item and command.quantity:
         item = db.db.find_best_match_by_name(command.item) or db.db.find_item_by_name(command.item)
         if not item:
@@ -319,11 +306,9 @@ def execute_command(command):
         else:
             return VoiceResponse(message=f"Not enough {item.name} in stock to deduct {command.quantity}.", success=False)
 
-    # update: set stock to specific quantity; create item if missing
     if command.type == "update" and command.item and command.quantity is not None:
         item = db.db.find_best_match_by_name(command.item) or db.db.find_item_by_name(command.item)
         if not item:
-            # create new item with provided quantity
             created = db.db.create_inventory_item(command.item, command.quantity, unit="units")
             return VoiceResponse(message=f"Added {created.name} with a stock of {created.currentStock} {created.unit}.", success=True)
         db.db.update_stock(item.id, command.quantity)
@@ -332,7 +317,6 @@ def execute_command(command):
             success=True
         )
 
-    # query: report stock
     if command.type == "query" and command.item:
         item = db.db.find_best_match_by_name(command.item) or db.db.find_item_by_name(command.item)
         if item:
@@ -342,7 +326,6 @@ def execute_command(command):
             )
         return VoiceResponse(message=f"I couldn't find {command.item} in inventory.", success=False)
 
-    # unknown or other
     return VoiceResponse(message="I didn't catch that. Please try again, like 'Add 20 masks' or 'I used 3 syringes'.", success=False)
 
 

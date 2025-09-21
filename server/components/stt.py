@@ -12,13 +12,10 @@ class SpeechToText:
         self.pipe = None
         self._pipeline_imported = False
         self._is_multilingual = True
-        # Pick a better multilingual default; allow env override.
-        # Base is reasonable on CPU, Small is better if GPU is available.
         env_model = os.getenv("STT_MODEL")
         if env_model:
             self._model_id = env_model
         else:
-            # Use larger model if GPU available for better accuracy
             if torch.cuda.is_available():
                 self._model_id = "openai/whisper-large-v3"
             else:
@@ -31,7 +28,6 @@ class SpeechToText:
                 from transformers import pipeline
                 self._pipeline_imported = True
 
-            # Multilingual Whisper model
             self._is_multilingual = True
             self.pipe = pipeline(
                 "automatic-speech-recognition",
@@ -50,18 +46,15 @@ class SpeechToText:
             audio_bytes = base64.b64decode(audio_data)
             print(f"Decoded audio bytes: {len(audio_bytes)}")
             
-            # Use pydub to handle different audio formats
             print("Converting audio format with pydub...")
             audio_segment = AudioSegment.from_file(io.BytesIO(audio_bytes))
             
-            # Export as WAV for librosa compatibility
             wav_buffer = io.BytesIO()
             audio_segment.export(wav_buffer, format="wav")
             wav_buffer.seek(0)
             
             print("Loading audio with librosa...")
             audio_array, sample_rate = librosa.load(wav_buffer, sr=16000, mono=True)
-            # Keep only first 15 seconds to ensure snappy processing
             max_len = 16000 * 15
             if audio_array.shape[0] > max_len:
                 audio_array = audio_array[:max_len]
@@ -72,7 +65,6 @@ class SpeechToText:
             
             print(f"Audio array stats - min: {audio_array.min():.6f}, max: {audio_array.max():.6f}, mean: {audio_array.mean():.6f}")
             
-            # Constrain to English or Romanian only using generate kwargs (preferred to forced_decoder_ids)
             lang_in = (language or "en").lower()
             lang = "ro" if lang_in.startswith("ro") else "en"
             

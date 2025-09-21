@@ -203,13 +203,12 @@ export class VoiceAssistant {
 
         this.analyser!.getByteFrequencyData(dataArray);
 
-        // Calculate average volume
         let sum = 0;
         for (let i = 0; i < bufferLength; i++) {
           sum += dataArray[i];
         }
         const average = sum / bufferLength;
-        const normalizedVolume = average / 255; // Normalize to 0-1
+        const normalizedVolume = average / 255;
 
         console.log("Audio level:", normalizedVolume.toFixed(3));
 
@@ -222,7 +221,6 @@ export class VoiceAssistant {
             }, this.silenceDuration);
           }
         } else {
-          // Speech detected, clear the silence timer
           if (this.silenceTimer) {
             console.log("Speech detected, clearing silence timer");
             clearTimeout(this.silenceTimer);
@@ -230,7 +228,6 @@ export class VoiceAssistant {
           }
         }
 
-        // Continue monitoring
         requestAnimationFrame(checkSilence);
       };
 
@@ -265,7 +262,6 @@ export class VoiceAssistant {
   }
 
   parseCommand(transcript: string): VoiceCommand {
-    // This method is now handled server-side
     return {
       type: "unknown",
       item: undefined,
@@ -305,9 +301,7 @@ export class VoiceAssistant {
         audio.onerror = () => resolve();
         audio.play().catch(() => resolve());
       });
-    } catch {
-      // no-op
-    }
+    } catch {}
   }
 }
 

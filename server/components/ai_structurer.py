@@ -4,12 +4,6 @@ from models import VoiceCommand
 from components.llm import local_llm
 
 class AIStructurer:
-    """
-    AI-powered multilingual intent + entity parser using Puter LLM.
-    - Uses LLM for flexible, natural language structuring
-    - No hardcoded mappings; handles EN/RO dynamically
-    """
-
     def structure_command(self, transcript: str) -> VoiceCommand:
         print(f"AI structuring transcript: '{transcript}'")
         structured = local_llm.structure_command(transcript)
@@ -19,14 +13,11 @@ class AIStructurer:
         qty = structured.get("quantity")
         notes = structured.get("response") or transcript
 
-        # Secondary simple fallback if LLM returned unknown or missing fields
         if action == "unknown" or (action in ["usage", "update"] and qty is None):
             import re
             text = transcript.strip()
-            # try detect integer
             m_qty = re.search(r"(\d+)", text)
             if not m_qty:
-                # number words
                 words = text.lower().split()
                 num_map = {
                     "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
@@ -55,7 +46,6 @@ class AIStructurer:
                 toks = re.findall(r"[A-Za-zăâîșț\-]+", low)
                 item = toks[-1].title() if toks else None
 
-        # Ensure a friendly, non-technical note
         if not notes or notes == transcript or action == "unknown":
             if action == "usage" and item and qty:
                 notes = f"I deducted {qty} {item}."
