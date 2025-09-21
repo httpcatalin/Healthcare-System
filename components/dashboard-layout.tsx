@@ -35,7 +35,7 @@ import {
   LogOut,
   Stethoscope,
   Home,
-  Bell
+  Receipt
 } from 'lucide-react'
 import { InventoryDashboard } from '@/components/inventory-dashboard'
 import { VoiceAssistant } from '@/components/voice-assistant'
@@ -111,17 +111,23 @@ export function DashboardLayout() {
       const admin = [
         ...baseItems,
         { name: 'Analytics', href: '#analytics', icon: BarChart3, current: false },
-        { name: 'Purchase Orders', href: '#orders', icon: FileText, current: false }
+        { name: 'Purchase Orders', href: '#orders', icon: Receipt, current: false }
         // { name: 'Settings', href: '#settings', icon: Settings, current: false }
       ]
-      return [...admin, { name: 'Invoice Processor', href: '#invoice', icon: FileText, current: false }]
+      return [
+        ...admin,
+        { name: 'Invoice Processor', href: '#invoice', icon: FileText, current: false }
+      ]
     } else if (auth.user?.role === 'doctor') {
       const doc = [
         ...baseItems,
         { name: 'Analytics', href: '#analytics', icon: BarChart3, current: false },
-        { name: 'Purchase Orders', href: '#orders', icon: FileText, current: false }
+        { name: 'Purchase Orders', href: '#orders', icon: Receipt, current: false }
       ]
-      return [...doc, { name: 'Invoice Processor', href: '#invoice', icon: FileText, current: false }]
+      return [
+        ...doc,
+        { name: 'Invoice Processor', href: '#invoice', icon: FileText, current: false }
+      ]
     } else {
       // Nurse role - limited access
       return baseItems

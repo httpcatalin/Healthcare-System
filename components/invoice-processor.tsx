@@ -182,17 +182,6 @@ export function InvoiceProcessor() {
             </div>
           </div>
 
-          {extractedText && (
-            <div>
-              <Label>Extracted Text</Label>
-              <Textarea
-                value={extractedText}
-                onChange={(e) => setExtractedText(e.target.value)}
-                rows={6}
-              />
-            </div>
-          )}
-
           {items.length > 0 && (
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

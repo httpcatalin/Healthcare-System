@@ -102,13 +102,13 @@ export function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Admin Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-[#f1f1f1] py-4  overflow-hidden flex flex-col justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card className="bg-[#f1f1f1] py-4 overflow-hidden flex flex-col justify-between">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
             <CardTitle className="xl:text-xl text-lg font-lg tracking-tight">
               Total Inventory Value
             </CardTitle>
-            <DollarSign className="absolute min-h-40 min-w-40 top-0 2xl:left-[12rem] xl:left-[11vw] md:-right-10 right-0 opacity-30" />
+            <DollarSign className="absolute min-h-40 min-w-40 top-0 right-0 opacity-30" />
           </CardHeader>
           <CardContent>
             <div className="xl:text-4xl text-xl font-bold">
@@ -126,7 +126,7 @@ export function AdminDashboard() {
             <CardTitle className="xl:text-xl text-lg font-lg tracking-tight text-red-400">
               Critical Alerts
             </CardTitle>
-            <AlertTriangle className="absolute min-h-40 min-w-40 top-0 text-red-600 2xl:left-[12rem] xl:left-[11vw] md:-right-10 right-0 opacity-30" />
+            <AlertTriangle className="absolute min-h-40 min-w-40 top-0 text-red-600 right-0 opacity-30" />
           </CardHeader>
           <CardContent>
             <div className="xl:text-4xl text-xl font-bold text-red-400">
@@ -141,7 +141,7 @@ export function AdminDashboard() {
             <CardTitle className="xl:text-xl text-lg font-lg tracking-tight text-blue-400">
               Pending Orders
             </CardTitle>
-            <FileText className="absolute min-h-40 min-w-40 top-0 text-blue-600 2xl:left-[12rem] xl:left-[11vw] md:-right-10 right-0 opacity-30" />
+            <FileText className="absolute min-h-40 min-w-40 top-0 text-blue-600 right-0 opacity-30" />
           </CardHeader>
           <CardContent>
             <div className="xl:text-4xl text-xl font-bold text-blue-400">
@@ -154,7 +154,7 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-green-600/10 border-green-600/20 overflow-hidden flex flex-col justify-between">
+        {/* <Card className="bg-green-600/10 border-green-600/20 overflow-hidden flex flex-col justify-between">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
             <CardTitle className="xl:text-xl text-lg font-lg tracking-tight text-green-600">
               System Health
@@ -165,7 +165,7 @@ export function AdminDashboard() {
             <div className="xl:text-4xl text-xl font-bold text-green-600">98.5%</div>
             <p className="text-xs text-foreground">Uptime this month</p>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Critical Alerts Section */}
